@@ -121,13 +121,30 @@
   <!-- Navigation Tabs -->
   <div class="nav-tabs">
     <div class="nav-tab active" data-tab="command" onclick="switchTab('command')"><span class="tab-icon">&#9678;</span>Command</div>
-    <div class="nav-tab" data-tab="activity" onclick="switchTab('activity')"><span class="tab-icon">&#9632;</span>Activity</div>
-    <div class="nav-tab" data-tab="intel" onclick="switchTab('intel')"><span class="tab-icon">&#9733;</span>Intelligence</div>
+    <div class="nav-tab" data-tab="activity" onclick="switchTab('activity')"><span class="tab-icon">&#9632;</span>Activity<span class="tab-badge err-badge" id="tabErrBadge"></span></div>
+    <div class="nav-tab" data-tab="intel" onclick="switchTab('intel')"><span class="tab-icon">&#9733;</span>Intelligence<span class="tab-badge score-badge" id="tabScoreBadge"></span></div>
     <div class="nav-tab" data-tab="radar" onclick="switchTab('radar')"><span class="tab-icon">&#9678;</span>Radar</div>
     <div class="nav-tab" data-tab="communities" onclick="switchTab('communities')"><span class="tab-icon">&#9673;</span>Communities</div>
     <div class="nav-tab" data-tab="manage" onclick="switchTab('manage')"><span class="tab-icon">&#9881;</span>Accounts</div>
     <div class="nav-tab" data-tab="network" onclick="switchTab('network')"><span class="tab-icon">&#9670;</span>Network</div>
-    <div class="nav-tab" data-tab="server" onclick="switchTab('server')"><span class="tab-icon">&#9652;</span>Server</div>
+    <div class="nav-tab" data-tab="server" onclick="switchTab('server')"><span class="tab-icon">&#9652;</span>Server<span class="tab-badge cpu-badge" id="tabCpuBadge"></span></div>
+  </div>
+
+  <!-- Global Status Bar -->
+  <div class="global-status-bar" id="globalStatusBar">
+    <span class="gsb-live" id="gsbLive">&#9679; LIVE</span>
+    <span class="gsb-item"><span class="gsb-val" id="gsbActions">0</span> actions today</span>
+    <span class="gsb-sep">|</span>
+    <span class="gsb-item">Last scan: <span class="gsb-val" id="gsbLastScan">-</span></span>
+    <span class="gsb-sep">|</span>
+    <span class="gsb-item">Next action: <span class="gsb-val" id="gsbNextAction">-</span></span>
+    <span class="gsb-sep">|</span>
+    <span class="gsb-item gsb-err" id="gsbErrWrap">ERR: <span class="gsb-val" id="gsbErrors">0</span></span>
+    <span class="gsb-sep">|</span>
+    <span class="gsb-item">CPU <span class="gsb-val" id="gsbCPU">-</span></span>
+    <span class="gsb-sep">|</span>
+    <span class="gsb-item">RAM <span class="gsb-val" id="gsbRAM">-</span></span>
+    <span class="gsb-spinner" id="gsbSpinner" style="display:none"></span>
   </div>
 
   <!-- Emergency Banner -->
@@ -207,7 +224,18 @@
   <div id="tab-activity" class="tab-content">
     <div class="grid">
       <div class="card full glow-cyan">
-        <h2>Live Agent Feed</h2>
+        <h2>Live Agent Feed <span class="badge-count err-glow" id="feedErrCount" style="display:none">0</span></h2>
+        <div class="feed-filters" id="feedFilters">
+          <button class="btn btn-xs active" onclick="filterFeed('all')">All</button>
+          <button class="btn btn-xs feed-pill-scan" onclick="filterFeed('SCAN')">Scan</button>
+          <button class="btn btn-xs feed-pill-act" onclick="filterFeed('ACT')">Act</button>
+          <button class="btn btn-xs feed-pill-eng" onclick="filterFeed('ENG')">Engage</button>
+          <button class="btn btn-xs feed-pill-err" onclick="filterFeed('ERR')">Errors</button>
+          <button class="btn btn-xs feed-pill-hub" onclick="filterFeed('HUB')">Hub</button>
+          <button class="btn btn-xs feed-pill-learn" onclick="filterFeed('LEARN')">Learn</button>
+          <button class="btn btn-xs feed-pill-pres" onclick="filterFeed('PRES')">Presence</button>
+          <span class="feed-auto-scroll" id="feedAutoScroll" onclick="toggleAutoScroll()">Auto-scroll: ON</span>
+        </div>
         <div id="chatFeed" class="chat-feed"></div>
       </div>
       <div class="card">

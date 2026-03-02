@@ -20,25 +20,88 @@ let _prevStats = {};       // previous stat values for trend arrows
 let _particleAnim = null;
 let _d3Loaded = false;
 let _networkSim = null;
+let _feedFilter = 'all';       // Live feed filter
+let _feedAutoScroll = true;    // Auto-scroll state
+let _errCount = 0;             // Session error count
+let _scheduleData = null;      // For countdown timers
+let _countdownTimer = null;    // Countdown interval
+let _lastScanTime = null;      // Track last scan time
+let _emergencyStopped = false;
 
 // ══════════════════════════════════════════════════════════════
-// TOAST SYSTEM (stacked)
+// TOAST SYSTEM (stacked, with progress bar + persistent errors)
 // ══════════════════════════════════════════════════════════════
-function toast(msg, type) {
+function toast(msg, type, opts) {
   const container = document.getElementById('toastContainer');
   if (!container) return;
+  opts = opts || {};
+  const persistent = opts.persistent || type === 'error';
+  const dur = opts.duration || (persistent ? 15000 : 3500);
+
   const el = document.createElement('div');
   el.className = 'toast ' + (type||'info');
-  el.textContent = msg;
+
+  const textSpan = document.createElement('span');
+  textSpan.textContent = msg;
+  el.appendChild(textSpan);
+
+  // Dismiss button for persistent toasts
+  if (persistent) {
+    const dismiss = document.createElement('span');
+    dismiss.className = 'toast-dismiss';
+    dismiss.textContent = '\u2715';
+    dismiss.onclick = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); };
+    el.appendChild(dismiss);
+  }
+
+  // Progress bar
+  const bar = document.createElement('div');
+  bar.className = 'toast-bar';
+  bar.style.width = '100%';
+  el.appendChild(bar);
+
   container.appendChild(el);
-  requestAnimationFrame(() => el.classList.add('show'));
-  const dur = 3500;
+  requestAnimationFrame(() => {
+    el.classList.add('show');
+    bar.style.transitionDuration = dur + 'ms';
+    bar.style.width = '0%';
+  });
+
   setTimeout(() => {
     el.classList.remove('show');
     setTimeout(() => el.remove(), 300);
   }, dur);
-  // Limit stack
-  while (container.children.length > 5) container.removeChild(container.firstChild);
+
+  while (container.children.length > 8) container.removeChild(container.firstChild);
+}
+
+// ══════════════════════════════════════════════════════════════
+// FEED FILTERS + AUTO-SCROLL
+// ══════════════════════════════════════════════════════════════
+function filterFeed(cat) {
+  _feedFilter = cat;
+  // Update active pill
+  const pills = document.querySelectorAll('.feed-filters .btn');
+  pills.forEach(b => b.classList.remove('active'));
+  if (event && event.target) event.target.classList.add('active');
+  // Filter existing messages
+  const feed = document.getElementById('chatFeed');
+  if (!feed) return;
+  Array.from(feed.children).forEach(msg => {
+    if (cat === 'all') { msg.style.display = ''; return; }
+    const badge = msg.querySelector('.cat-badge');
+    const msgCat = badge ? badge.textContent.trim().toUpperCase() : '';
+    msg.style.display = (msgCat === cat.toUpperCase()) ? '' : 'none';
+  });
+}
+
+function toggleAutoScroll() {
+  _feedAutoScroll = !_feedAutoScroll;
+  const el = document.getElementById('feedAutoScroll');
+  if (el) {
+    el.textContent = 'Auto-scroll: ' + (_feedAutoScroll ? 'ON' : 'OFF');
+    el.classList.toggle('paused', !_feedAutoScroll);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -214,6 +277,74 @@ function hpBar(status) {
 function splitCSV(s) { return s ? s.split(',').map(x=>x.trim()).filter(Boolean) : []; }
 
 // ══════════════════════════════════════════════════════════════
+// GLOBAL STATUS BAR + TAB BADGES
+// ══════════════════════════════════════════════════════════════
+function updateGlobalStatusBar(opts) {
+  opts = opts || {};
+  // LIVE indicator
+  const live = document.getElementById('gsbLive');
+  if (live) {
+    if (opts.emergency) { live.className = 'gsb-live stopped'; live.innerHTML = '&#9679; STOPPED'; }
+    else if (opts.paused) { live.className = 'gsb-live paused'; live.innerHTML = '&#9679; PAUSED'; }
+    else { live.className = 'gsb-live'; live.innerHTML = '&#9679; LIVE'; }
+  }
+  // Actions today
+  if (opts.actions !== undefined) {
+    const el = document.getElementById('gsbActions');
+    if (el) el.textContent = opts.actions;
+  }
+  // Last scan
+  if (opts.lastScan) {
+    const el = document.getElementById('gsbLastScan');
+    if (el) el.textContent = opts.lastScan;
+  }
+  // Next action
+  if (opts.nextAction) {
+    const el = document.getElementById('gsbNextAction');
+    if (el) el.textContent = opts.nextAction;
+  }
+  // Errors
+  const errEl = document.getElementById('gsbErrors');
+  if (errEl) errEl.textContent = _errCount;
+  const errWrap = document.getElementById('gsbErrWrap');
+  if (errWrap) errWrap.classList.toggle('has-errors', _errCount > 0);
+  // CPU + RAM
+  if (opts.cpu !== undefined) {
+    const el = document.getElementById('gsbCPU');
+    if (el) { el.textContent = opts.cpu + '%'; el.style.color = opts.cpu > 60 ? 'var(--red)' : opts.cpu > 30 ? 'var(--yellow)' : 'var(--neon-green)'; }
+  }
+  if (opts.ram !== undefined) {
+    const el = document.getElementById('gsbRAM');
+    if (el) { el.textContent = opts.ram + 'MB'; el.style.color = opts.ram > 300 ? 'var(--red)' : opts.ram > 200 ? 'var(--yellow)' : 'var(--neon-green)'; }
+  }
+  // Spinner (show during refresh)
+  const spinner = document.getElementById('gsbSpinner');
+  if (spinner) spinner.style.display = opts.loading ? 'inline-block' : 'none';
+}
+
+function updateTabBadges(opts) {
+  opts = opts || {};
+  // ERR badge on Activity tab
+  const errBadge = document.getElementById('tabErrBadge');
+  if (errBadge) {
+    if (_errCount > 0) { errBadge.textContent = _errCount > 99 ? '99+' : _errCount; errBadge.style.display = 'inline-flex'; }
+    else errBadge.style.display = 'none';
+  }
+  // Score badge on Intelligence tab
+  const scoreBadge = document.getElementById('tabScoreBadge');
+  if (scoreBadge && opts.perfScore !== undefined) {
+    scoreBadge.textContent = opts.perfScore;
+    scoreBadge.style.display = 'inline-flex';
+  }
+  // CPU badge on Server tab
+  const cpuBadge = document.getElementById('tabCpuBadge');
+  if (cpuBadge && opts.cpu !== undefined) {
+    cpuBadge.textContent = opts.cpu + '%';
+    cpuBadge.style.display = opts.cpu > 50 ? 'inline-flex' : 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
 // RENDER: STATUS
 // ══════════════════════════════════════════════════════════════
 function renderStatus(d) {
@@ -239,6 +370,8 @@ function renderStatus(d) {
   if (eb) eb.classList.toggle('show', !!d.emergency_stopped);
   const btnEmergency = document.getElementById('btnEmergency');
   if (btnEmergency) btnEmergency.disabled = !!d.emergency_stopped;
+  // Update global status bar
+  updateGlobalStatusBar({ emergency: !!d.emergency_stopped, paused: paused });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -256,6 +389,8 @@ function renderStats(d) {
   const mrR = document.getElementById('mrReddit'); if (mrR) countUp(mrR, byPlat.reddit||0, 500);
   const mrT = document.getElementById('mrTelegram'); if (mrT) countUp(mrT, byPlat.telegram||0, 500);
   const mrO = document.getElementById('mrOpps'); if (mrO) countUp(mrO, opps.pending||0, 500);
+  // Update global status bar with actions count
+  updateGlobalStatusBar({ actions: total });
 
   // Track history for sparklines
   pushHistory('total', total);
@@ -415,7 +550,46 @@ function renderSchedule(d, elId) {
   const el = document.getElementById(elId);
   if (!el) return;
   if (!d||!d.length) { el.innerHTML='<p class="no-data">No scheduled jobs</p>'; return; }
-  el.innerHTML = d.map(j => `<div class="sched-row"><span class="sched-name">${esc(j.name)}</span><div><span class="countdown">${fmtCD(j.seconds_until)}</span><span class="interval">${esc(j.interval||'')}</span></div></div>`).join('');
+  // Save for countdown timer
+  _scheduleData = { jobs: d.map(j => ({...j, _lastUpdate: Date.now()})), elId };
+  _renderScheduleHTML(el, d);
+  // Start countdown timer if not running
+  if (!_countdownTimer) {
+    _countdownTimer = setInterval(() => {
+      if (!_scheduleData) return;
+      const el2 = document.getElementById(_scheduleData.elId);
+      if (!el2) return;
+      const elapsed = (Date.now() - _scheduleData.jobs[0]._lastUpdate) / 1000;
+      const updated = _scheduleData.jobs.map(j => ({...j, seconds_until: Math.max(-1, j.seconds_until - elapsed)}));
+      _renderScheduleHTML(el2, updated);
+    }, 1000);
+  }
+}
+
+function _renderScheduleHTML(el, jobs) {
+  el.innerHTML = jobs.map(j => {
+    const secs = j.seconds_until;
+    const isPaused = secs < 0;
+    // Parse interval to get total seconds for progress bar
+    const intervalStr = j.interval || '';
+    let totalSecs = 3600; // default 1h
+    const hMatch = intervalStr.match(/(\d+)h/);
+    const mMatch = intervalStr.match(/(\d+)m/);
+    if (hMatch) totalSecs = parseInt(hMatch[1]) * 3600;
+    if (mMatch) totalSecs += parseInt(mMatch[1]) * 60;
+    const pct = isPaused ? 0 : Math.max(0, Math.min(100, (1 - secs / totalSecs) * 100));
+    // Urgency classes
+    const urgencyClass = isPaused ? '' : secs < 60 ? 'urgent' : secs < 300 ? 'soon' : 'normal';
+    const cdClass = isPaused ? 'cd-paused' : secs < 60 ? 'cd-urgent' : secs < 300 ? 'cd-soon' : 'cd-normal';
+    return `<div class="sched-row">
+      <span class="sched-name">${esc(j.name)}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="countdown sched-countdown ${cdClass}">${fmtCD(secs)}</span>
+        <span class="interval">${esc(intervalStr)}</span>
+      </div>
+      <div class="sched-progress ${urgencyClass}"><div class="sched-progress-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -733,6 +907,9 @@ function renderServer(d) {
   const mrRAM = document.getElementById('mrRAM');
   if(mrCPU) { mrCPU.textContent = (cpu.usage_pct||0)+'%'; mrCPU.style.color = cpu.usage_pct>60?'var(--red)':cpu.usage_pct>30?'var(--yellow)':'var(--neon-green)'; }
   if(mrRAM) { mrRAM.textContent = (proc.rss_mb||0)+'MB'; mrRAM.style.color = proc.rss_mb>300?'var(--red)':proc.rss_mb>200?'var(--yellow)':'var(--neon-green)'; }
+  // Update global status bar + tab badges
+  updateGlobalStatusBar({ cpu: cpu.usage_pct||0, ram: proc.rss_mb||0 });
+  updateTabBadges({ cpu: cpu.usage_pct||0 });
 
   const ss = document.getElementById('serverStats');
   if(ss) ss.innerHTML = `
@@ -1080,6 +1257,28 @@ function connectWS() {
     const lc = document.getElementById('logCount');
     if (lc) lc.textContent = _logCount;
 
+    // Track errors
+    if (rec.level === 'ERROR') {
+      _errCount++;
+      updateTabBadges({});
+      updateGlobalStatusBar({});
+      // Error count badge on feed header
+      const feedErr = document.getElementById('feedErrCount');
+      if (feedErr) { feedErr.textContent = _errCount; feedErr.style.display = 'inline-flex'; }
+    }
+
+    // Track scan times for global status bar
+    const cat = rec.cat || '';
+    const msgLower = (rec.msg || '').toLowerCase();
+    if (cat === 'SCAN' || msgLower.includes('scan complete') || msgLower.includes('scanning')) {
+      _lastScanTime = new Date();
+      updateGlobalStatusBar({ lastScan: rec.ts || 'now' });
+    }
+    // Track next action
+    if (cat === 'ACT' || msgLower.includes('acting on') || msgLower.includes('selected opportunity')) {
+      updateGlobalStatusBar({ nextAction: rec.ts || 'now' });
+    }
+
     // Logs panel (server tab)
     const panel = document.getElementById('logsPanel');
     if (panel) {
@@ -1092,21 +1291,29 @@ function connectWS() {
       panel.scrollTop = panel.scrollHeight;
     }
 
-    // Chat feed (activity tab)
+    // Chat feed (activity tab) with color-coding + filtering
     const chat = document.getElementById('chatFeed');
     if (chat) {
       const cm = document.createElement('div');
       cm.className = 'chat-msg';
-      const cat = rec.cat||'';
+      // Color-code by category
+      const catColorMap = {SCAN:'scan',ACT:'act',ENG:'eng',ERR:'err',HUB:'hub',LEARN:'learn',PRES:'pres'};
+      const catClass = catColorMap[cat] || '';
+      if (catClass) cm.classList.add('cat-' + catClass);
       cm.innerHTML = `<span class="chat-ts">${esc(rec.ts)}</span>${cat?`<span class="cat-badge ${cat}">${cat}</span>`:''}<span class="chat-text">${esc(rec.msg)}</span>`;
+      // Apply current filter
+      if (_feedFilter !== 'all') {
+        cm.style.display = (cat.toUpperCase() === _feedFilter.toUpperCase()) ? '' : 'none';
+      }
       chat.appendChild(cm);
       while (chat.children.length>250) chat.removeChild(chat.firstChild);
-      chat.scrollTop = chat.scrollHeight;
+      // Respect auto-scroll setting
+      if (_feedAutoScroll) chat.scrollTop = chat.scrollHeight;
     }
 
-    // Toast for errors
-    if (rec.level === 'ERROR' && rec.cat === 'ERR') {
-      toast(rec.msg.substring(0,80), 'error');
+    // Toast for errors (persistent)
+    if (rec.level === 'ERROR') {
+      toast(rec.msg.substring(0, 100), 'error', {persistent: true});
     }
   };
   ws.onclose = () => { if(TOKEN) setTimeout(connectWS, 3000); };
@@ -1534,6 +1741,7 @@ function renderSentimentMap(data) {
 async function refresh() {
   if (_refreshing) return;
   _refreshing = true;
+  updateGlobalStatusBar({ loading: true });
   try {
     const status = await api('/api/status').catch(()=>null);
     if (status) renderStatus(status);
@@ -1547,7 +1755,12 @@ async function refresh() {
       ]);
       if (stats.status==='fulfilled') renderStats(stats.value);
       if (minimaps.status==='fulfilled') renderMinimaps(minimaps.value);
-      if (schedule.status==='fulfilled') renderSchedule(schedule.value, 'scheduleList');
+      if (schedule.status==='fulfilled') {
+        renderSchedule(schedule.value, 'scheduleList');
+        // Update global status bar with next action from schedule
+        const nextJob = (schedule.value||[]).filter(j => j.seconds_until >= 0).sort((a,b) => a.seconds_until - b.seconds_until)[0];
+        if (nextJob) updateGlobalStatusBar({ nextAction: fmtCD(nextJob.seconds_until) + ' (' + nextJob.name + ')' });
+      }
       if (history.status==='fulfilled') renderTimeline(history.value);
       if (acctPerf.status==='fulfilled') renderRedditAcctPerf(acctPerf.value);
       if (heatmap.status==='fulfilled' && heatmap.value) renderHeatmap(heatmap.value);
@@ -1604,6 +1817,17 @@ async function refresh() {
       if (server.status==='fulfilled') renderServer(server.value);
       if (schedule.status==='fulfilled') renderSchedule(schedule.value, 'scheduleListFull');
     }
+    // Always fetch server stats for global status bar (lightweight)
+    if (currentTab !== 'server') {
+      api('/api/server').then(sv => {
+        if (sv && !sv.error) {
+          const cpu = sv.cpu || {};
+          const proc = sv.process || {};
+          updateGlobalStatusBar({ cpu: cpu.usage_pct||0, ram: proc.rss_mb||0 });
+          updateTabBadges({ cpu: cpu.usage_pct||0 });
+        }
+      }).catch(() => {});
+    }
     else if (currentTab === 'radar') {
       const data = await api('/api/intel/radar').catch(()=>null);
       if (data) renderRadar(data);
@@ -1614,6 +1838,7 @@ async function refresh() {
     }
   } catch(e) { console.error('Refresh error:', e); }
   _refreshing = false;
+  updateGlobalStatusBar({ loading: false });
 }
 
 // ══════════════════════════════════════════════════════════════
