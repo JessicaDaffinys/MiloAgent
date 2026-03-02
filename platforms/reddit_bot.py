@@ -184,9 +184,10 @@ class RedditBot(BasePlatform):
                     is_promotional=is_promo,
                 )
 
-                # Validate against bot patterns
+                # Validate against bot patterns + organic leakage
                 is_valid, score, issues = _validator.validate(
-                    candidate, project, platform="reddit"
+                    candidate, project, platform="reddit",
+                    is_promotional=is_promo,
                 )
 
                 if is_valid and score >= 0.7:

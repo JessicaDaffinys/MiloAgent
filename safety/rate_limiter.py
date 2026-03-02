@@ -81,7 +81,7 @@ class RateLimiter:
         account: str,
         platform: str,
         subreddit_or_query: Optional[str] = None,
-        cooldown_minutes: int = 15,
+        cooldown_minutes: int = 60,
     ) -> tuple:
         """Check if an action is allowed right now.
 
@@ -92,10 +92,15 @@ class RateLimiter:
         if not self.is_active_hours():
             return False, "Outside active hours"
 
+        # Weekend reduction: halve the hourly limit
+        effective_hourly_limit = self.max_actions_per_hour
+        if self.is_weekend():
+            effective_hourly_limit = max(2, effective_hourly_limit // 2)
+
         # Check per-account hourly limit (cached)
         action_count = self._get_cached_action_count(account, platform)
-        if action_count >= self.max_actions_per_hour:
-            return False, f"Hourly limit reached ({action_count}/{self.max_actions_per_hour})"
+        if action_count >= effective_hourly_limit:
+            return False, f"Hourly limit reached ({action_count}/{effective_hourly_limit})"
 
         # Check minimum interval since last action
         last_key = f"{account}:{platform}"
@@ -106,7 +111,11 @@ class RateLimiter:
                 wait = int(min_interval - elapsed)
                 return False, f"Too soon since last action (wait {wait}s)"
 
-        # Check per-subreddit cooldown
+        # Random break: 8% chance of skipping an action cycle (simulate human breaks)
+        if self.should_take_random_break(probability=0.08):
+            return False, "Random human-like break"
+
+        # Check per-subreddit cooldown (minimum 60 min between same-sub actions)
         if subreddit_or_query:
             last_sub = self.db.get_last_action_in_subreddit(
                 account, subreddit_or_query
@@ -115,9 +124,10 @@ class RateLimiter:
                 elapsed_min = (
                     datetime.utcnow() - last_sub
                 ).total_seconds() / 60
-                if elapsed_min < cooldown_minutes:
+                effective_cooldown = max(cooldown_minutes, 60)
+                if elapsed_min < effective_cooldown:
                     return False, (
-                        f"Subreddit cooldown ({int(elapsed_min)}/{cooldown_minutes}min)"
+                        f"Subreddit cooldown ({int(elapsed_min)}/{effective_cooldown}min)"
                     )
 
         return True, "OK"

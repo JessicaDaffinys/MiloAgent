@@ -4,29 +4,29 @@ bot:
   mode: "auto"                 # auto | background | full | server
                                # auto = macOS→full, Linux server/Docker→server
   cost_mode: "zero"            # zero | standard
-  active_hours: [4, 24]        # Bot active window (24h format)
-  scan_interval_minutes: 8     # Scan frequency
-  action_interval_minutes: 3   # Min interval between actions (accounts rotate)
-  max_actions_per_hour: 12     # Total across all accounts
-  organic_promo_ratio: 0.92    # 92% organic, 8% promotional (trusted accounts only)
+  active_hours: [8, 23]        # Bot active window (24h format)
+  scan_interval_minutes: 12    # Scan frequency
+  action_interval_minutes: 8   # Min 8min between actions (accounts rotate)
+  max_actions_per_hour: 6      # Total across all accounts (was 12)
+  organic_promo_ratio: 0.95    # 95% organic, 5% promotional max
   log_level: "INFO"
 
 scheduling:
   background:
-    scan_interval_minutes: 20
-    action_interval_minutes: 6
-    max_actions_per_hour: 10
-    active_hours: [8, 23]
+    scan_interval_minutes: 25
+    action_interval_minutes: 12
+    max_actions_per_hour: 4
+    active_hours: [9, 22]
   full:
-    scan_interval_minutes: 10
-    action_interval_minutes: 4
-    max_actions_per_hour: 10
-    active_hours: [6, 23]
+    scan_interval_minutes: 15
+    action_interval_minutes: 8
+    max_actions_per_hour: 5
+    active_hours: [8, 22]
   server:
-    scan_interval_minutes: 8
-    action_interval_minutes: 4
-    max_actions_per_hour: 10
-    active_hours: [6, 23]
+    scan_interval_minutes: 12
+    action_interval_minutes: 8
+    max_actions_per_hour: 6
+    active_hours: [8, 23]
 
 # Project priorities — adjust weights to control which project gets more attention
 # Keys must match your project filenames in projects/ (without .yaml)
@@ -93,9 +93,9 @@ resources_server:
 
 user_posts:
   enabled: true
-  max_per_day: 3
-  min_gap_hours: 8
-  base_probability: 0.35
+  max_per_day: 1              # Max 1 post per day per account (was 3)
+  min_gap_hours: 16           # At least 16h between posts (was 8)
+  base_probability: 0.15      # 15% chance per cycle (was 35%)
   cross_platform_share: false
   post_types:
     discovery: true

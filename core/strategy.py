@@ -546,9 +546,10 @@ class StrategyEngine:
                 continue
 
         if not chosen_sub:
-            # Fallback: random subreddit (new stage → tip/question only)
-            chosen_sub = random.choice(prioritized[:5])
-            chosen_stage = "new"
+            # New accounts should NOT create posts in random subs
+            # Only allow posting in subs where we have warming+ presence
+            logger.debug("User post skipped: no established subreddit found")
+            return None
 
         # Select post type based on stage (with learned weights if available)
         from core.content_gen import ContentGenerator
@@ -567,15 +568,11 @@ class StrategyEngine:
             # Try a safe fallback
             post_type = "tip" if enabled_types.get("tip", True) else "question"
 
-        # Determine promotional
+        # Determine promotional — CONSERVATIVE, match content_gen caps
         is_promotional = False
-        if chosen_stage in ("established", "trusted"):
-            from core.content_gen import ContentGenerator as CG
-            # Use static-like logic: established=5%, trusted=20%
-            if chosen_stage == "established":
-                is_promotional = random.random() < 0.05
-            else:
-                is_promotional = random.random() < 0.20
+        if chosen_stage == "trusted":
+            is_promotional = random.random() < 0.05  # 5% max for posts (was 20%)
+        # established & warming: always organic for posts
 
         # Check for trend context
         trend_context = ""

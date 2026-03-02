@@ -172,7 +172,10 @@ class AccountManager:
                 if not a.get("enabled", True):
                     continue
                 identifier = a.get("username") or a.get("phone", "")
-                if identifier.startswith("YOUR_"):
+                if identifier.startswith("YOUR_") or identifier.startswith("your_"):
+                    continue
+                # Skip obvious placeholder accounts
+                if identifier in ("your_reddit_username", "your_twitter_username"):
                     continue
                 # Normalize: ensure 'username' key is set for telegram accounts
                 if platform == "telegram" and not a.get("username"):

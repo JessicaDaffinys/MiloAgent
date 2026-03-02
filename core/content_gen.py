@@ -485,7 +485,8 @@ class ContentGenerator:
     ) -> str:
         """Generate a Reddit comment for a given post."""
         if is_promotional is None:
-            is_promotional = self._should_be_promotional()
+            # Default to organic — NEVER promote without explicit decision
+            is_promotional = False
 
         promo_instruction = self._get_promotional_instruction(
             project, is_promotional
@@ -498,11 +499,9 @@ class ContentGenerator:
         post_type = self._detect_post_type(post_title, post_body)
         post_type_instruction = self._get_post_type_instruction(post_type)
 
-        # Get subreddit-specific persona
+        # Get subreddit-specific persona — keep it even for organic
         persona = self._get_subreddit_persona(subreddit)
         tone_style = persona["tone"]
-        if not is_promotional:
-            tone_style = "organic_engagement"
 
         # A/B test override for tone
         proj_name = project.get("project", {}).get("name", "")
@@ -511,16 +510,22 @@ class ContentGenerator:
                 exp_id, variant, value = self._ab_engine.get_variant(proj_name, "tone")
                 if variant and value:
                     tone_style = value
-                    # Store experiment info for result recording
                     self._last_ab_experiment = (exp_id, variant)
             except Exception:
                 pass
 
         tone_instruction = self._get_tone_instruction(tone_style)
 
-        # Gather research context and failure rules
+        # Gather research context and failure rules (thread-safe copy)
         research_context = getattr(self, "_research_context", "") or ""
         failure_rules = getattr(self, "_failure_rules", "") or ""
+
+        # SAFETY: Strip research context if it contains off-topic terms
+        # that could leak into unrelated subreddit comments
+        if research_context:
+            research_context = self._sanitize_research_context(
+                research_context, subreddit, post_title
+            )
 
         template = self.templates.get("reddit_comment", "")
         if not template:
@@ -555,6 +560,32 @@ class ContentGenerator:
             system_prompt=system_prompt,
             task="creative",
         )
+
+    def _sanitize_research_context(
+        self, context: str, subreddit: str, post_title: str,
+    ) -> str:
+        """Strip research context that's irrelevant to the current post.
+
+        Prevents 'agentic breakthroughs' leaking into r/gamingsuggestions, etc.
+        If context doesn't share any keywords with the post, drop it entirely.
+        """
+        if not context or len(context) < 10:
+            return ""
+
+        # Check if research context shares at least one meaningful word
+        # with the post title (3+ char words only)
+        title_words = {
+            w.lower() for w in post_title.split() if len(w) >= 3
+        }
+        context_words = {
+            w.lower() for w in context.split() if len(w) >= 3
+        }
+        # At least 2 shared words needed for context to be relevant
+        shared = title_words & context_words
+        if len(shared) < 2:
+            return ""
+
+        return context
 
     def generate_reddit_post(
         self,

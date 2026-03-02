@@ -2,7 +2,7 @@
 
 import re
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from difflib import SequenceMatcher
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ class ContentValidator:
     4. Bot-like patterns
     5. Length appropriateness
     6. Pricing claim verification
+    7. Organic mode enforcement (no product/URL leakage)
     """
 
     BOT_PATTERNS = [
@@ -36,6 +37,7 @@ class ContentValidator:
         (r"\*\*.+?\*\*.*\*\*.+?\*\*", "too much bold formatting"),
         (r"(?:^[-•] .+$\n?){3,}", "excessive bullet list"),
         (r"(?:^\d+[.)]\s.+$\n?){3,}", "numbered list"),
+        (r"^#{1,3}\s", "markdown header in comment"),
         # ── LLM structural tells ──
         (r"(?i)in\s+(?:conclusion|summary|short)[,:]", "essay conclusion"),
         (r"(?i)let me\s+(?:break this down|explain|elaborate|walk you)", "LLM explanation"),
@@ -68,11 +70,23 @@ class ContentValidator:
         (r"(?i)\b(?:straightforward|arguably|nuanced|multifaceted)\b", "LLM favorite word"),
         (r"(?i)\b(?:a plethora of|a myriad of|a wealth of)\b", "LLM quantity phrase"),
         # ── Repetitive sentence starts ──
-        (r"(?:^|\n)(I [a-z]+[^.]*\.\s*I [a-z]+[^.]*\.\s*I [a-z]+)", "3+ sentences starting with I"),
+        (r"(?:^|\n)(I [a-z]+[^.!?]*[.!?]\s*I [a-z]+[^.!?]*[.!?]\s*I [a-z]+)", "3+ sentences starting with I"),
+        # ── LLM structural fingerprints ──
+        (r"(?i)the part about\b", "LLM template phrase 'the part about'"),
+        (r"(?i)\bI'?ve been using .+ for \d+ (?:months?|years?)\b", "LLM recommendation pattern"),
+        (r"(?i)\bpersonally,?\s+I\b", "LLM 'personally I' pattern"),
+        (r"(?i)\b(?:it'?s|this is) (?:kinda|pretty) (?:intriguing|interesting|fascinating)\b", "forced casual pattern"),
+        (r"(?i)\bagentic breakthroughs?\b", "leaked research context"),
+        (r"(?i)\bOpenClaw\b", "leaked research context"),
+        (r"(?i)(?:^|\. )(?:nah|tbh|kinda|imo|fwiw)[,.]?\s+(?:nah|tbh|kinda|imo|fwiw)\b", "forced slang stacking"),
     ]
 
     def validate(
-        self, content: str, project: Dict, platform: str = "reddit"
+        self,
+        content: str,
+        project: Dict,
+        platform: str = "reddit",
+        is_promotional: Optional[bool] = None,
     ) -> Tuple[bool, float, List[str]]:
         """Validate content against business profile.
 
@@ -110,13 +124,19 @@ class ContentValidator:
         # Check 5: Length appropriateness
         length_issues = self._check_length(content, platform)
         issues.extend(length_issues)
-        score -= len(length_issues) * 0.05
+        score -= len(length_issues) * 0.1
 
         # Check 6: Pricing claims
         if profile:
             claim_issues = self._check_pricing_claims(content, proj, profile)
             issues.extend(claim_issues)
             score -= len(claim_issues) * 0.15
+
+        # Check 7: Organic mode enforcement — product/URL must NOT appear
+        if is_promotional is False:
+            organic_issues = self._check_organic_leakage(content, proj)
+            issues.extend(organic_issues)
+            score -= len(organic_issues) * 0.3
 
         score = max(0.0, min(1.0, score))
         is_valid = score >= 0.6 and not any("CRITICAL" in i for i in issues)
@@ -221,10 +241,51 @@ class ContentValidator:
         if platform == "twitter" and len(content) > 280:
             issues.append(f"Tweet exceeds 280 chars ({len(content)})")
         elif platform == "reddit":
-            if word_count < 10:
+            if word_count < 8:
                 issues.append(f"Comment too short ({word_count} words)")
-            elif word_count > 300:
-                issues.append(f"Comment too long ({word_count} words)")
+            elif word_count > 120:
+                # Real Reddit comments that perform well are SHORT
+                issues.append(f"CRITICAL: Comment too long ({word_count} words, max 120)")
+
+        return issues
+
+    def _check_organic_leakage(self, content: str, proj: Dict) -> List[str]:
+        """Check that organic (non-promotional) content has NO product mentions.
+
+        This is critical — organic comments that 'accidentally' mention the
+        product are the #1 reason accounts get flagged as spam bots.
+        """
+        issues = []
+        content_lower = content.lower()
+
+        # Check product name
+        name = proj.get("name", "")
+        if name and len(name) >= 2 and name.lower() in content_lower:
+            issues.append(
+                f"CRITICAL: Product '{name}' mentioned in organic comment"
+            )
+
+        # Check alt names
+        for alt in proj.get("alt_names", []):
+            if alt and len(alt) >= 2 and alt.lower() in content_lower:
+                issues.append(
+                    f"CRITICAL: Product alt name '{alt}' in organic comment"
+                )
+
+        # Check project URL
+        url = proj.get("url", "")
+        if url:
+            domain = (
+                url.replace("https://", "").replace("http://", "").rstrip("/")
+            )
+            if domain.lower() in content_lower:
+                issues.append(
+                    f"CRITICAL: Product URL '{domain}' in organic comment"
+                )
+
+        # Check for any URL in organic comment (suspicious)
+        if re.search(r"https?://[^\s]+", content):
+            issues.append("URL found in organic comment (suspicious)")
 
         return issues
 

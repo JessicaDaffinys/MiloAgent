@@ -980,6 +980,24 @@ class Orchestrator:
             if platform == "telegram" and "text" not in opp and "title" in opp:
                 opp["text"] = opp["title"]
 
+            # SAFETY: Hard daily cap per account (no more than 15 actions/day)
+            if platform == "reddit":
+                daily_count = self.db.get_action_count(
+                    hours=24, account=account["username"], platform="reddit"
+                )
+                if daily_count >= 15:
+                    logger.info(
+                        f"Daily cap reached for {account['username']}: "
+                        f"{daily_count}/15 actions today"
+                    )
+                    self.db.log_decision(
+                        "daily_cap", platform, proj_name,
+                        account["username"], opp["target_id"],
+                        details=f"Daily cap: {daily_count}/15",
+                        outcome="skipped",
+                    )
+                    continue
+
             allowed, reason = self.rate_limiter.can_act(
                 account["username"], platform,
                 subreddit_or_query=opp.get("subreddit_or_query"),
@@ -1407,10 +1425,17 @@ class Orchestrator:
                     title = f"{content.get('title', '')}"[:290]
                     source = content.get("source", "")
                     article_url = content.get("url", "")
-                    body = f"Interesting article"
+                    # Generate a varied intro instead of hardcoded "Interesting article... Thoughts?"
+                    _intros = [
+                        f"Came across this",
+                        f"Saw this and thought it was relevant",
+                        f"Worth reading",
+                        f"Found this earlier",
+                    ]
+                    body = random.choice(_intros)
                     if source:
-                        body += f" from {source}"
-                    body += f":\n\n{article_url}\n\nThoughts?"
+                        body += f" ({source})"
+                    body += f":\n\n{article_url}"
 
                     url = bot.create_post(sub, title, body, project)
                     if url:
@@ -1921,6 +1946,21 @@ class Orchestrator:
 
                 if not post_data.get("title") or not post_data.get("body"):
                     logger.warning("User post generation returned empty content")
+                    continue
+
+                # Validate post content against bot patterns + organic leakage
+                from core.content_validator import ContentValidator
+                _post_validator = ContentValidator()
+                is_valid, vscore, vissues = _post_validator.validate(
+                    f"{post_data['title']}\n{post_data['body']}",
+                    project, platform="reddit",
+                    is_promotional=decision["is_promotional"],
+                )
+                if not is_valid or vscore < 0.7:
+                    logger.warning(
+                        f"User post rejected by validator "
+                        f"(score={vscore:.2f}): {vissues[:3]}"
+                    )
                     continue
 
                 # Dedup check
