@@ -16,7 +16,16 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 
 def load_yaml(path: str) -> dict:
-    """Load a YAML config file."""
+    """Load YAML config, preferring .local.yaml override if it exists.
+
+    On servers, rename your real config to e.g. llm.local.yaml so
+    ``git pull`` never overwrites it (*.local.yaml is gitignored).
+    """
+    if path.endswith(".yaml"):
+        local_path = path[:-5] + ".local.yaml"
+        if os.path.exists(local_path):
+            with open(local_path) as f:
+                return yaml.safe_load(f) or {}
     with open(path) as f:
         return yaml.safe_load(f) or {}
 

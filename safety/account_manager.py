@@ -153,7 +153,11 @@ class AccountManager:
     # ── Account Loading ────────────────────────────────────────────
 
     def load_accounts(self, platform: str) -> List[Dict]:
-        """Load accounts for a platform from config."""
+        """Load accounts for a platform from config.
+
+        Prefers .local.yaml override (gitignored) so git pull never
+        overwrites real credentials on the server.
+        """
         if platform == "reddit":
             path = f"{self.config_dir}/reddit_accounts.yaml"
         elif platform == "twitter":
@@ -162,6 +166,12 @@ class AccountManager:
             path = f"{self.config_dir}/telegram_user_accounts.yaml"
         else:
             return []
+
+        # Check for .local.yaml override
+        if path.endswith(".yaml"):
+            local_path = path[:-5] + ".local.yaml"
+            if os.path.exists(local_path):
+                path = local_path
 
         try:
             with open(path) as f:

@@ -933,13 +933,17 @@ class Database:
     def get_action_count_in_subreddit(
         self, account: str, subreddit: str, hours: int = 24
     ) -> int:
-        """Count actions by a specific account in a specific subreddit."""
-        since = (datetime.utcnow() - timedelta(hours=hours)).isoformat()
+        """Count opportunity-based actions by account in a subreddit.
+
+        Uses JOIN to opportunities table (which holds subreddit info).
+        Hub posts use a separate flow and are not counted here.
+        """
+        since = (datetime.now() - timedelta(hours=hours)).isoformat()
         try:
             row = self.conn.execute(
                 """SELECT COUNT(*) FROM actions a
                    JOIN opportunities o ON a.target_id = o.target_id
-                   WHERE a.account = ? AND o.subreddit_or_query = ?
+                   WHERE a.account = ? AND LOWER(o.subreddit_or_query) = LOWER(?)
                    AND a.success = 1 AND a.timestamp > ?""",
                 (account, subreddit, since),
             ).fetchone()

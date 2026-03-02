@@ -47,10 +47,14 @@ data/curator_cache/
 projects/*.yaml
 !projects/example_project.yaml
 
+# ── Server-side config overrides (NEVER commit) ──────────
+# On the server, rename real configs to *.local.yaml.
+# The code auto-detects .local.yaml and loads it instead.
+# e.g. config/llm.yaml (template) → config/llm.local.yaml (real keys)
+*.local.yaml
+
 # ── Old directory structures (purged from history) ────────
-miloagent/config/
-miloagent/projects/
-miloagent/data/
+miloagent/
 growthbot/config/
 growthbot/projects/
 

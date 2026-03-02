@@ -402,7 +402,7 @@ Rules:
 
     def _get_scheduled_content(self, hub: Dict, project: Dict) -> Optional[Dict]:
         """Get scheduled content for today if applicable and not already posted."""
-        today = datetime.utcnow().weekday()
+        today = datetime.now().weekday()
         schedule = HUB_CONTENT_SCHEDULE.get(today)
         if not schedule:
             return None
@@ -462,7 +462,7 @@ Rules:
                    WHERE action_type = 'hub_post'
                    AND metadata LIKE ?
                    AND metadata LIKE ?
-                   AND timestamp > datetime('now', '-20 hours')""",
+                   AND timestamp > datetime('now', '-24 hours')""",
                 (f'%"hub": "{subreddit}"%', f'%"template_key": "{template_key}"%'),
             ).fetchone()
             return row[0] > 0

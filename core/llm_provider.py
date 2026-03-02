@@ -9,6 +9,7 @@ The only real bottleneck is the Mac hardware — not API quotas.
 """
 
 import logging
+import os
 import threading
 import time
 import concurrent.futures
@@ -105,7 +106,14 @@ class LLMProvider:
     CIRCUIT_BREAKER_COOLDOWN = 3600  # 1 hour
 
     def __init__(self, config_path: str = "config/llm.yaml"):
-        with open(config_path) as f:
+        # Prefer .local.yaml override (gitignored) so git pull never
+        # overwrites real API keys on the server.
+        actual_path = config_path
+        if config_path.endswith(".yaml"):
+            local_path = config_path[:-5] + ".local.yaml"
+            if os.path.exists(local_path):
+                actual_path = local_path
+        with open(actual_path) as f:
             self.config = yaml.safe_load(f)
 
         self.clients: Dict[str, OpenAI] = {}

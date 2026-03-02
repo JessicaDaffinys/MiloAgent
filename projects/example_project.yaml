@@ -19,7 +19,7 @@ project:
   description: "Brief description of what your product does and who it's for."
   tagline: "Your catchy one-liner"
   weight: 1.0                               # Priority weight (higher = more attention)
-  enabled: true
+  enabled: false                             # Template only — copy and enable for your project
 
   selling_points:
     - "Key feature or benefit #1"

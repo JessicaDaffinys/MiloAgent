@@ -62,6 +62,16 @@ LLM_TIMEOUT_SECONDS = 45        # Hard timeout for LLM calls
 
 
 def load_yaml(path: str) -> dict:
+    """Load YAML config, preferring .local.yaml override if it exists.
+
+    On servers, rename your real config to e.g. llm.local.yaml so
+    ``git pull`` never overwrites it (*.local.yaml is gitignored).
+    """
+    if path.endswith(".yaml"):
+        local_path = path[:-5] + ".local.yaml"
+        if os.path.exists(local_path):
+            with open(local_path) as f:
+                return yaml.safe_load(f) or {}
     with open(path) as f:
         return yaml.safe_load(f) or {}
 
@@ -604,11 +614,11 @@ class Orchestrator:
                 except Exception:
                     pass
 
-        # Disconnect Telegram group bots
+        # Disconnect Telegram group bots (2s timeout — don't let this block shutdown)
         for bot in self._telegram_group_bots.values():
             try:
                 from platforms.telegram_group_bot import _run_tg_async
-                _run_tg_async(bot.disconnect(), timeout=5)
+                _run_tg_async(bot.disconnect(), timeout=2)
             except Exception:
                 pass
 
@@ -960,7 +970,7 @@ class Orchestrator:
                         s = o.get("relevance_score") or o.get("score") or 0
                         return float(s) if isinstance(s, (int, float)) else 0.0
                     pending.sort(key=lambda o: (
-                        0 if o.get("subreddit_or_query", "") in preferred else 1,
+                        0 if (o.get("subreddit_or_query", "") or "").lower() in [p.lower() for p in preferred] else 1,
                         -_safe_score(o),
                     ))
 
@@ -1125,7 +1135,7 @@ class Orchestrator:
             self.content_gen._hub_reference = ""
             if platform == "reddit" and random.random() < 0.10:
                 try:
-                    hubs = self.hub_mgr.get_hubs(proj_name) if self.hub_mgr else []
+                    hubs = self.hub_manager.get_hubs(proj_name) if self.hub_manager else []
                     ready_hubs = [
                         h for h in hubs
                         if h.get("setup_complete") and h.get("total_posts", 0) >= 3
@@ -2830,7 +2840,7 @@ class Orchestrator:
             hubs = self.hub_manager.get_hubs(proj_name)
 
             # Filter to ready hubs (setup_complete or >24h old)
-            now = datetime.utcnow()
+            now = datetime.now()
             ready_hubs = [h for h in hubs if h.get("setup_complete")]
             if not ready_hubs:
                 for h in hubs:
@@ -3222,7 +3232,8 @@ class Orchestrator:
                             executed.append("Scan interval reduced to 10min")
 
                     elif fix == "boost_reddit":
-                        self._platform_turn = 0  # Even = Reddit first
+                        with self._state_lock:
+                            self._platform_turn = 0  # Even = Reddit first
                         executed.append("Reddit prioritized for next cycles")
 
                     elif fix == "diversify_actions":
@@ -3321,7 +3332,16 @@ class Orchestrator:
         """Handle SIGTERM/SIGINT for graceful shutdown, SIGUSR1 for hot-reload."""
         def _handler(signum, frame):
             logger.info(f"Received signal {signum}, shutting down...")
-            self.stop()
+            # Safety net: force-exit after 12s if stop() hangs
+            # (systemd sends SIGKILL after 15s, we want to exit cleanly before that)
+            watchdog = threading.Timer(12.0, lambda: os._exit(1))
+            watchdog.daemon = True
+            watchdog.start()
+            try:
+                self.stop()
+            except Exception as e:
+                logger.error(f"Error during shutdown: {e}")
+            watchdog.cancel()
             sys.exit(0)
 
         def _reload_handler(signum, frame):
