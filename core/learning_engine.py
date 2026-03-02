@@ -816,7 +816,7 @@ class LearningEngine:
         """
         weights = self.db.get_learned_weights(category, project)
         for w in weights:
-            if w["key"] == key:
+            if w["key"].lower() == key.lower():
                 if w["sample_count"] < _MIN_SAMPLES:
                     return 1.0
                 # Normalize: average weight = 1.0

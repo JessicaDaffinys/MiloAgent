@@ -147,7 +147,7 @@ class StrategyEngine:
         subreddit = opp.get("subreddit", "")
         sub_boost = self.learning.get_scoring_boost("subreddit", subreddit, proj_name)
 
-        if subreddit in primary:
+        if subreddit.lower() in [p.lower() for p in primary]:
             score += 1.5 * sub_boost
         else:
             score += 0.5 * sub_boost
@@ -217,14 +217,17 @@ class StrategyEngine:
         if len(projects) == 1:
             return projects[0]
 
+        # Fetch once outside loop (was called per-project = N redundant queries)
+        recent_actions = self.db.get_action_count(hours=24)
+        all_recent = self.db.get_recent_actions(hours=24) or []
+
         weighted = []
         for proj in projects:
             proj_name = proj.get("project", {}).get("name", "unknown")
             base_weight = proj.get("project", {}).get("weight", 1.0)
 
-            recent_actions = self.db.get_action_count(hours=24)
             proj_actions = len([
-                a for a in self.db.get_recent_actions(hours=24)
+                a for a in all_recent
                 if a.get("project", "").lower() == proj_name.lower()
             ])
 
@@ -510,7 +513,7 @@ class StrategyEngine:
                 try:
                     from datetime import datetime, timedelta
                     ts = datetime.fromisoformat(a["timestamp"])
-                    if datetime.utcnow() - ts < timedelta(hours=min_gap_hours):
+                    if datetime.now() - ts < timedelta(hours=min_gap_hours):
                         logger.debug("User post skipped: min gap not met")
                         return None
                 except Exception:

@@ -124,13 +124,13 @@ class CommunityManager:
         steps = {}
         try:
             rows = self.db.conn.execute(
-                "SELECT step, status FROM community_setup_log WHERE subreddit = ?",
+                "SELECT step, status FROM community_setup_log WHERE LOWER(subreddit) = LOWER(?)",
                 (subreddit,),
             ).fetchall()
             for row in rows:
                 steps[row["step"]] = row["status"]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"get_setup_status error for r/{subreddit}: {e}")
         return steps
 
     def _mark_step(self, subreddit: str, project: str, step: str,
@@ -185,12 +185,16 @@ class CommunityManager:
         if status.get("rules") != "completed":
             if self._apply_rules(reddit_bot, subreddit, config, proj_name):
                 success_count += 1
+            else:
+                logger.warning(f"r/{subreddit}: rules creation failed (will retry next cycle)")
             time.sleep(random.uniform(3, 8))
 
         # Step 3: Create flairs
         if status.get("flairs") != "completed":
             if self._apply_flairs(reddit_bot, subreddit, config, proj_name):
                 success_count += 1
+            else:
+                logger.warning(f"r/{subreddit}: flairs creation failed (will retry next cycle)")
             time.sleep(random.uniform(3, 8))
 
         # Step 4: Configure AutoModerator
@@ -208,12 +212,16 @@ class CommunityManager:
         if status.get("welcome_post") != "completed":
             if self._create_welcome_post(reddit_bot, subreddit, config, project, proj_name):
                 success_count += 1
+            else:
+                logger.warning(f"r/{subreddit}: welcome post failed (will retry next cycle)")
             time.sleep(random.uniform(5, 15))
 
         # Step 6: Create and pin rules post
         if status.get("rules_post") != "completed":
             if self._create_rules_post(reddit_bot, subreddit, config, project, proj_name):
                 success_count += 1
+            else:
+                logger.warning(f"r/{subreddit}: rules post failed (will retry next cycle)")
 
         # Re-check status after all steps
         final_status = self.get_setup_status(subreddit)
@@ -250,7 +258,7 @@ class CommunityManager:
         """Mark a hub as setup-complete in the database."""
         try:
             self.db._execute_write(
-                "UPDATE subreddit_hubs SET setup_complete = 1 WHERE subreddit = ?",
+                "UPDATE subreddit_hubs SET setup_complete = 1 WHERE LOWER(subreddit) = LOWER(?)",
                 (subreddit,),
             )
         except Exception as e:
@@ -769,7 +777,7 @@ Reply with exactly one word: APPROVE, REMOVE, or IGNORE."""
         keeping the rules post in slot 2.
         """
         proj_name = project.get("project", {}).get("name", "unknown")
-        now = datetime.utcnow()
+        now = datetime.now()
         week_str = now.strftime("%B %d, %Y")
 
         title = f"Weekly Discussion Thread — {week_str}"
@@ -812,7 +820,7 @@ Reply with exactly one word: APPROVE, REMOVE, or IGNORE."""
 
         try:
             last_dt = datetime.fromisoformat(last_post)
-            return (datetime.utcnow() - last_dt) > timedelta(days=refresh_days)
+            return (datetime.now() - last_dt) > timedelta(days=refresh_days)
         except Exception:
             return True
 

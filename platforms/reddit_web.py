@@ -748,7 +748,7 @@ class RedditWebBot(BasePlatform):
             validator = ContentValidator()
 
             is_valid, score, issues = validator.validate(
-                content, project, "reddit"
+                content, project, "reddit", is_promotional=is_promo,
             )
 
             if is_valid:
@@ -770,7 +770,7 @@ class RedditWebBot(BasePlatform):
             )
 
             is_valid2, score2, issues2 = validator.validate(
-                content_retry, project, "reddit"
+                content_retry, project, "reddit", is_promotional=is_promo,
             )
 
             if is_valid2:
@@ -882,7 +882,7 @@ class RedditWebBot(BasePlatform):
         # Subreddit tier (0-1.5)
         subs = reddit_config.get("target_subreddits", {})
         primary = subs.get("primary", []) if isinstance(subs, dict) else subs
-        if opp.get("subreddit", "") in primary:
+        if opp.get("subreddit", "").lower() in [p.lower() for p in primary]:
             score += 1.5
         else:
             score += 0.5

@@ -41,33 +41,51 @@ class BanDetector:
 
         try:
             user = reddit_instance.redditor(username)
-            comments = list(user.comments.new(limit=5))
+            comments = list(user.comments.new(limit=10))
+
+            # No comments is NOT a shadowban indicator for new/quiet accounts
             if not comments:
-                result["indicators"].append("No recent comments found")
+                logger.debug(f"u/{username}: no comments found (new/quiet account)")
+                return result
+
+            # Need enough samples for reliable detection
+            if len(comments) < 3:
+                logger.debug(f"u/{username}: only {len(comments)} comments, skipping check")
+                return result
 
             low_score_count = sum(1 for c in comments if c.score <= 1)
-            if comments and low_score_count == len(comments):
+            if low_score_count == len(comments):
                 result["indicators"].append(
                     "All recent comments have score <= 1"
                 )
 
-            for comment in comments[:3]:
+            # Check if comments are hidden (404/removed, NOT network errors)
+            hidden_count = 0
+            for comment in comments[:5]:
                 try:
                     comment.refresh()
-                except Exception:
-                    result["indicators"].append(
-                        f"Comment {comment.id} may be hidden"
-                    )
+                except Exception as e:
+                    err_str = str(e).lower()
+                    if "404" in err_str or "not found" in err_str or "removed" in err_str:
+                        hidden_count += 1
+                    else:
+                        logger.debug(f"Comment refresh non-ban error: {e}")
 
+            if hidden_count >= 2:
+                result["indicators"].append(
+                    f"{hidden_count}/{min(len(comments), 5)} comments appear hidden"
+                )
+
+            # Require 2+ STRONG indicators for shadowban detection
             if len(result["indicators"]) >= 2:
                 result["is_shadowbanned"] = True
-                result["confidence"] = "medium"
-            if len(result["indicators"]) >= 3:
                 result["confidence"] = "high"
+            elif len(result["indicators"]) == 1:
+                result["confidence"] = "low"
 
         except Exception as e:
             logger.error(f"Shadowban check failed for u/{username}: {e}")
-            result["indicators"].append(f"Check failed: {e}")
+            # API errors are NOT indicators — return inconclusive
 
         return result
 
@@ -91,10 +109,11 @@ class BanDetector:
 
             if not tweets:
                 result["indicators"].append("No own tweets found in search")
-                result["is_restricted"] = True
+                # Don't immediately mark restricted — could be indexing delay
+                logger.debug(f"@{username}: no tweets in search (may be delay)")
 
         except Exception as e:
             logger.error(f"Twitter restriction check failed for @{username}: {e}")
-            result["indicators"].append(f"Check failed: {e}")
+            # API errors are NOT restriction indicators
 
         return result
