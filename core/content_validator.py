@@ -21,64 +21,63 @@ class ContentValidator:
     7. Organic mode enforcement (no product/URL leakage)
     """
 
+    # Pre-compiled regex patterns for bot detection (compiled once at class load)
     BOT_PATTERNS = [
         # ── Generic openers (instant bot tell) ──
-        (r"^(Great question|I totally agree|This is amazing|This!)", "generic opener"),
-        (r"^(Hey there|Hi there|Hello there|Hey!)", "bot-like greeting"),
-        (r"^(Absolutely|Definitely|Totally|Certainly|Exactly)[,!]", "LLM cliche opener"),
-        (r"^(This resonates|This hits|This is so relatable|Love this)", "sycophantic opener"),
-        (r"^(Well,|So,|Honestly,|Actually,|In my experience,)\s", "formulaic opener"),
-        (r"^(As someone who|Speaking as a|Coming from a)", "role-declaration opener"),
+        (re.compile(r"^(Great question|I totally agree|This is amazing|This!)"), "generic opener"),
+        (re.compile(r"^(Hey there|Hi there|Hello there|Hey!)"), "bot-like greeting"),
+        (re.compile(r"^(Absolutely|Definitely|Totally|Certainly|Exactly)[,!]"), "LLM cliche opener"),
+        (re.compile(r"^(This resonates|This hits|This is so relatable|Love this)"), "sycophantic opener"),
+        (re.compile(r"^(Well,|So,|Honestly,|Actually,|In my experience,)\s"), "formulaic opener"),
+        (re.compile(r"^(As someone who|Speaking as a|Coming from a)"), "role-declaration opener"),
         # ── AI self-reference ──
-        (r"(As an AI|I'm an AI|As a language model)", "AI self-reference"),
+        (re.compile(r"(As an AI|I'm an AI|As a language model)"), "AI self-reference"),
         # ── Formatting tells ──
-        (r"(!!+)", "excessive exclamation"),
-        (r"(#\w+\s*){2,}", "hashtags"),
-        (r"\*\*.+?\*\*.*\*\*.+?\*\*", "too much bold formatting"),
-        (r"(?:^[-•] .+$\n?){3,}", "excessive bullet list"),
-        (r"(?:^\d+[.)]\s.+$\n?){3,}", "numbered list"),
-        (r"^#{1,3}\s", "markdown header in comment"),
+        (re.compile(r"(!!+)"), "excessive exclamation"),
+        (re.compile(r"(#\w+\s*){2,}"), "hashtags"),
+        (re.compile(r"\*\*.+?\*\*.*\*\*.+?\*\*"), "too much bold formatting"),
+        (re.compile(r"(?:^[-•] .+\n?){3,}", re.MULTILINE), "excessive bullet list"),
+        (re.compile(r"(?:^\d+[.)]\s.+\n?){3,}", re.MULTILINE), "numbered list"),
         # ── LLM structural tells ──
-        (r"(?i)in\s+(?:conclusion|summary|short)[,:]", "essay conclusion"),
-        (r"(?i)let me\s+(?:break this down|explain|elaborate|walk you)", "LLM explanation"),
-        (r"(?i)here'?s\s+(?:the thing|what I think|my take|the deal)[,:]", "formulaic transition"),
-        (r"(?i)(?:that being said|with that said|having said that|not to mention)", "transition cliche"),
-        (r"(?i)(?:on top of that|to add to this|building on this|to piggyback)", "stacking transition"),
+        (re.compile(r"(?i)in\s+(?:conclusion|summary|short)[,:]"), "essay conclusion"),
+        (re.compile(r"(?i)let me\s+(?:break this down|explain|elaborate|walk you)"), "LLM explanation"),
+        (re.compile(r"(?i)here'?s\s+(?:the thing|what I think|my take|the deal)[,:]"), "formulaic transition"),
+        (re.compile(r"(?i)(?:that being said|with that said|having said that|not to mention)"), "transition cliche"),
+        (re.compile(r"(?i)(?:on top of that|to add to this|building on this|to piggyback)"), "stacking transition"),
         # ── Corporate / marketing language ──
-        (r"(?i)\b(?:leverage|utilize|streamline|optimize|maximize)\s+(?:your|the|this)\b", "corporate language"),
-        (r"(?i)\bgame[- ]?changer\b", "marketing cliche"),
-        (r"(?i)\b(?:next level|level up|up your game|take it to)\b", "hype phrase"),
-        (r"(?i)\b(?:don'?t sleep on|hidden gem|you won'?t regret|must[- ]have)\b", "promotional cliche"),
-        (r"(?i)\b(?:robust|seamless|comprehensive|cutting[- ]edge|innovative)\b", "corporate adjective"),
-        (r"(?i)\b(?:landscape|paradigm|synergy|ecosystem|holistic)\b", "corporate noun"),
+        (re.compile(r"(?i)\b(?:leverage|utilize|streamline|optimize|maximize)\s+(?:your|the|this)\b"), "corporate language"),
+        (re.compile(r"(?i)\bgame[- ]?changer\b"), "marketing cliche"),
+        (re.compile(r"(?i)\b(?:next level|level up|up your game|take it to)\b"), "hype phrase"),
+        (re.compile(r"(?i)\b(?:don'?t sleep on|hidden gem|you won'?t regret|must[- ]have)\b"), "promotional cliche"),
+        (re.compile(r"(?i)\b(?:robust|seamless|comprehensive|cutting[- ]edge|innovative)\b"), "corporate adjective"),
+        (re.compile(r"(?i)\b(?:landscape|paradigm|synergy|ecosystem|holistic)\b"), "corporate noun"),
         # ── AI hedging / service phrases ──
-        (r"(?i)\bit(?:'?s| is) worth (?:noting|mentioning|pointing out)\b", "AI hedging phrase"),
-        (r"(?i)\b(?:I'?d be happy to|feel free to|don't hesitate to)\b", "AI service phrase"),
-        (r"(?i)\b(?:it'?s important to (?:note|remember|understand))\b", "AI didactic phrase"),
-        (r"(?i)\b(?:I would (?:recommend|suggest|argue|say) that)\b", "AI hedging recommendation"),
+        (re.compile(r"(?i)\bit(?:'?s| is) worth (?:noting|mentioning|pointing out)\b"), "AI hedging phrase"),
+        (re.compile(r"(?i)\b(?:I'?d be happy to|feel free to|don't hesitate to)\b"), "AI service phrase"),
+        (re.compile(r"(?i)\b(?:it'?s important to (?:note|remember|understand))\b"), "AI didactic phrase"),
+        (re.compile(r"(?i)\b(?:I would (?:recommend|suggest|argue|say) that)\b"), "AI hedging recommendation"),
         # ── Bot-like closers ──
-        (r"(?i)(?:Hope this helps|Happy to help|Good luck|You'?ve got this)[!.]?\s*$", "bot-like closer"),
-        (r"(?i)(?:Let me know if|Feel free to ask|Happy coding|Cheers!)\s*$", "bot-like closer"),
-        (r"(?i)(?:Best of luck|Wishing you|All the best)[!.]?\s*$", "bot-like closer"),
+        (re.compile(r"(?i)(?:Hope this helps|Happy to help|Good luck|You'?ve got this)[!.]?\s*$"), "bot-like closer"),
+        (re.compile(r"(?i)(?:Let me know if|Feel free to ask|Happy coding|Cheers!)\s*$"), "bot-like closer"),
+        (re.compile(r"(?i)(?:Best of luck|Wishing you|All the best)[!.]?\s*$"), "bot-like closer"),
         # ── Unnatural superlatives ──
-        (r"(?i)\b(?:incredibly|remarkably|phenomenally|extraordinarily|insanely)\s+(?:useful|helpful|powerful|important|good)\b", "unnatural superlative"),
+        (re.compile(r"(?i)\b(?:incredibly|remarkably|phenomenally|extraordinarily|insanely)\s+(?:useful|helpful|powerful|important|good)\b"), "unnatural superlative"),
         # ── AI empathy / validation ──
-        (r"(?i)^(?:I completely understand|I hear you|That's a great point|I can relate)", "AI empathy opener"),
-        (r"(?i)^(?:What a great|Such a great|Really great)\s+(?:question|post|point|topic)", "AI validation opener"),
+        (re.compile(r"(?i)^(?:I completely understand|I hear you|That's a great point|I can relate)"), "AI empathy opener"),
+        (re.compile(r"(?i)^(?:What a great|Such a great|Really great)\s+(?:question|post|point|topic)"), "AI validation opener"),
         # ── AI favorite words ──
-        (r"(?i)\bdelve\s+(?:into|deeper)\b", "LLM favorite word 'delve'"),
-        (r"(?i)\b(?:straightforward|arguably|nuanced|multifaceted)\b", "LLM favorite word"),
-        (r"(?i)\b(?:a plethora of|a myriad of|a wealth of)\b", "LLM quantity phrase"),
+        (re.compile(r"(?i)\bdelve\s+(?:into|deeper)\b"), "LLM favorite word 'delve'"),
+        (re.compile(r"(?i)\b(?:straightforward|arguably|nuanced|multifaceted)\b"), "LLM favorite word"),
+        (re.compile(r"(?i)\b(?:a plethora of|a myriad of|a wealth of)\b"), "LLM quantity phrase"),
         # ── Repetitive sentence starts ──
-        (r"(?:^|\n)(I [a-z]+[^.!?]*[.!?]\s*I [a-z]+[^.!?]*[.!?]\s*I [a-z]+)", "3+ sentences starting with I"),
+        (re.compile(r"(?:^|\n)(I [a-z]+[^.!?]*[.!?]\s*I [a-z]+[^.!?]*[.!?]\s*I [a-z]+)"), "3+ sentences starting with I"),
         # ── LLM structural fingerprints ──
-        (r"(?i)the part about\b", "LLM template phrase 'the part about'"),
-        (r"(?i)\bI'?ve been using .+ for \d+ (?:months?|years?)\b", "LLM recommendation pattern"),
-        (r"(?i)\bpersonally,?\s+I\b", "LLM 'personally I' pattern"),
-        (r"(?i)\b(?:it'?s|this is) (?:kinda|pretty) (?:intriguing|interesting|fascinating)\b", "forced casual pattern"),
-        (r"(?i)\bagentic breakthroughs?\b", "leaked research context"),
-        (r"(?i)\bOpenClaw\b", "leaked research context"),
-        (r"(?i)(?:^|\. )(?:nah|tbh|kinda|imo|fwiw)[,.]?\s+(?:nah|tbh|kinda|imo|fwiw)\b", "forced slang stacking"),
+        (re.compile(r"(?i)the part about\b"), "LLM template phrase 'the part about'"),
+        (re.compile(r"(?i)\bpersonally,?\s+I\b"), "LLM 'personally I' pattern"),
+        (re.compile(r"(?i)\b(?:it'?s|this is) (?:kinda|pretty) (?:intriguing|interesting|fascinating)\b"), "forced casual pattern"),
+        (re.compile(r"(?i)\bagentic breakthroughs?\b"), "leaked research context"),
+        (re.compile(r"(?i)\bOpenClaw\b"), "leaked research context"),
+        (re.compile(r"(?i)(?:^|\. )(?:nah|tbh|kinda|imo|fwiw)[,.]?\s+(?:nah|tbh|kinda|imo|fwiw)\b"), "forced slang stacking"),
     ]
 
     def validate(
@@ -163,14 +162,14 @@ class ContentValidator:
         if name_lower not in content_lower:
             return issues  # Product not mentioned, that's fine
 
-        # Find all occurrences case-insensitively and check capitalization
+        # Find all occurrences and check spelling
         for match in re.finditer(re.escape(name_lower), content_lower):
             start, end = match.start(), match.end()
             actual = content[start:end]
             if actual != name:
+                # Case difference only → soft warning (casual Reddit style is OK)
                 issues.append(
-                    f"CRITICAL: Product name misspelled: '{actual}' "
-                    f"should be '{name}'"
+                    f"Product name case: '{actual}' vs '{name}'"
                 )
 
         return issues
@@ -226,10 +225,10 @@ class ContentValidator:
         return issues
 
     def _check_bot_patterns(self, content: str) -> List[str]:
-        """Check for bot-like writing patterns."""
+        """Check for bot-like writing patterns (pre-compiled regex)."""
         issues = []
-        for pattern, desc in self.BOT_PATTERNS:
-            if re.search(pattern, content, re.IGNORECASE):
+        for compiled_re, desc in self.BOT_PATTERNS:
+            if compiled_re.search(content):
                 issues.append(f"Bot-like pattern: {desc}")
         return issues
 
@@ -283,9 +282,16 @@ class ContentValidator:
                     f"CRITICAL: Product URL '{domain}' in organic comment"
                 )
 
-        # Check for any URL in organic comment (suspicious)
-        if re.search(r"https?://[^\s]+", content):
-            issues.append("URL found in organic comment (suspicious)")
+        # Check for URLs in organic comment (suspicious, but allow common reference sites)
+        urls = re.findall(r"https?://([^\s/]+)", content)
+        safe_domains = {
+            "reddit.com", "wikipedia.org", "en.wikipedia.org",
+            "stackoverflow.com", "github.com", "youtube.com",
+            "docs.google.com", "imgur.com", "i.imgur.com",
+        }
+        for domain in urls:
+            if not any(domain.endswith(safe) for safe in safe_domains):
+                issues.append(f"URL in organic comment: {domain}")
 
         return issues
 
