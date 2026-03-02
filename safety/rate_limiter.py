@@ -130,6 +130,15 @@ class RateLimiter:
                         f"Subreddit cooldown ({int(elapsed_min)}/{effective_cooldown}min)"
                     )
 
+            # Per-sub daily cap: max 2 actions per account per subreddit per day
+            sub_daily = self.db.get_action_count_in_subreddit(
+                account, subreddit_or_query, hours=24
+            )
+            if sub_daily >= 2:
+                return False, (
+                    f"Daily sub cap ({sub_daily}/2 in r/{subreddit_or_query})"
+                )
+
         return True, "OK"
 
     def wait_with_jitter(

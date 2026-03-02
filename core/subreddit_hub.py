@@ -13,11 +13,14 @@ Safety:
 - Build credibility first — at least 10 organic posts before any promo
 """
 
+import json as _json
 import logging
 import random
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+
+from core.hub_content_templates import HUB_CONTENT_SCHEDULE
 
 logger = logging.getLogger(__name__)
 
@@ -397,6 +400,75 @@ Rules:
         current_ratio = promo / total
         return current_ratio < 0.25
 
+    def _get_scheduled_content(self, hub: Dict, project: Dict) -> Optional[Dict]:
+        """Get scheduled content for today if applicable and not already posted."""
+        today = datetime.utcnow().weekday()
+        schedule = HUB_CONTENT_SCHEDULE.get(today)
+        if not schedule:
+            return None
+
+        template_key = schedule["template_key"]
+        if self._already_posted_template_today(hub["subreddit"], template_key):
+            return None
+
+        proj_info = project.get("project", {})
+        niche = hub.get("niche", proj_info.get("description", ""))
+
+        prompt = (
+            f"You manage r/{hub['subreddit']} (niche: {niche}).\n"
+            f"{schedule['prompt_hint']}\n\n"
+            "Write a post with:\n"
+            "TITLE: [engaging title]\n"
+            "BODY: [2-3 paragraphs, genuine community content]\n\n"
+            "Rules:\n"
+            "- No product mentions\n"
+            "- Write like a passionate community moderator\n"
+            "- Keep it valuable and engaging\n"
+        )
+        try:
+            response = self.llm.generate(prompt, task="creative", max_tokens=800)
+            title = ""
+            body_lines = []
+            in_body = False
+            for line in response.split("\n"):
+                stripped = line.strip()
+                if stripped.upper().startswith("TITLE:"):
+                    title = stripped[6:].strip()
+                    in_body = False
+                elif stripped.upper().startswith("BODY:"):
+                    body_lines.append(stripped[5:].strip())
+                    in_body = True
+                elif in_body:
+                    body_lines.append(line)
+
+            body = "\n".join(body_lines).strip()
+            if title and body:
+                return {
+                    "title": title,
+                    "body": body,
+                    "type": schedule["type"],
+                    "promo": "none",
+                    "template_key": template_key,
+                }
+        except Exception as e:
+            logger.error(f"Scheduled content generation failed: {e}")
+        return None
+
+    def _already_posted_template_today(self, subreddit: str, template_key: str) -> bool:
+        """Check if a scheduled template was already posted today."""
+        try:
+            row = self.db.conn.execute(
+                """SELECT COUNT(*) FROM actions
+                   WHERE action_type = 'hub_post'
+                   AND metadata LIKE ?
+                   AND metadata LIKE ?
+                   AND timestamp > datetime('now', '-20 hours')""",
+                (f'%"hub": "{subreddit}"%', f'%"template_key": "{template_key}"%'),
+            ).fetchone()
+            return row[0] > 0
+        except Exception:
+            return False
+
     def post_to_hub(self, reddit_bot, hub: Dict, project: Dict) -> Optional[str]:
         """Generate and post content to an owned hub."""
         if not self.should_post_to_hub(hub):
@@ -405,12 +477,16 @@ Rules:
 
         is_promo = self.should_be_promotional(hub)
 
-        # Generate content
-        ideas = self.generate_hub_ideas(hub, project, count=1)
-        if not ideas:
-            return None
+        # Prefer scheduled content (Mon/Wed/Fri recurring templates)
+        idea = self._get_scheduled_content(hub, project)
 
-        idea = ideas[0]
+        # Fallback to LLM-generated ideas
+        if not idea:
+            ideas = self.generate_hub_ideas(hub, project, count=1)
+            if not ideas:
+                return None
+            idea = ideas[0]
+
         if not is_promo:
             idea["promo"] = "none"
 
@@ -451,7 +527,6 @@ Rules:
                 pass
 
             # Log as a specific action type
-            import json
             self.db.log_action(
                 platform="reddit",
                 action_type="hub_post",
@@ -459,8 +534,9 @@ Rules:
                 project=project.get("project", {}).get("name", ""),
                 target_id=f"hub_{hub['subreddit']}_{int(time.time())}",
                 content=f"{title}\n\n{body}",
-                metadata=json.dumps({
+                metadata=_json.dumps({
                     "hub": hub["subreddit"],
+                    "template_key": idea.get("template_key", ""),
                     "type": idea.get("type", "unknown"),
                     "promo": is_promo_actual,
                     "url": url,

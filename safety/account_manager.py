@@ -337,6 +337,30 @@ class AccountManager:
                 del self._cooldowns[key]
         self.db.update_account_health(platform, account, self.HEALTHY)
 
+    def get_assigned_subreddits(self, account: Dict, platform: str) -> List[str]:
+        """Get subreddits explicitly assigned to this account in the YAML config.
+
+        Returns empty list if no assignment (meaning no restriction).
+        """
+        assigned = account.get("assigned_subreddits", [])
+        if isinstance(assigned, list):
+            return [s.lower() for s in assigned if s]
+        return []
+
+    def is_subreddit_assigned(
+        self, account: Dict, platform: str, subreddit: str
+    ) -> bool:
+        """Check if a subreddit is assigned to this account.
+
+        Returns True if:
+        - No assigned_subreddits configured (no restriction)
+        - The subreddit is in the account's assigned list
+        """
+        assigned = self.get_assigned_subreddits(account, platform)
+        if not assigned:
+            return True  # No restriction
+        return subreddit.lower() in assigned
+
     def get_preferred_subreddits(
         self, account: str, platform: str, max_subs: int = 5
     ) -> List[str]:

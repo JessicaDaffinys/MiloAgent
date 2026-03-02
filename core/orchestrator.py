@@ -934,6 +934,22 @@ class Orchestrator:
             if not account:
                 continue
 
+            # SAFETY: Filter opportunities to only assigned subreddits for this account
+            if platform == "reddit":
+                assigned = self.account_mgr.get_assigned_subreddits(account, platform)
+                if assigned:
+                    filtered = [
+                        o for o in pending
+                        if (o.get("subreddit_or_query", "") or "").lower() in assigned
+                    ]
+                    if not filtered:
+                        logger.debug(
+                            f"No opportunities in assigned subs for {account['username']} "
+                            f"({len(pending)} total, {len(assigned)} assigned subs)"
+                        )
+                        continue
+                    pending = filtered
+
             # Expertise focus: prefer opportunities in this account's focus subreddits
             if platform == "reddit" and len(pending) > 1:
                 preferred = self.account_mgr.get_preferred_subreddits(
@@ -1104,6 +1120,28 @@ class Orchestrator:
                 logger.debug(f"Research context injection failed: {e}")
                 self.content_gen._research_context = ""
                 self.content_gen._failure_rules = ""
+
+            # Cross-pollination: 10% chance to hint at our hub in comments
+            self.content_gen._hub_reference = ""
+            if platform == "reddit" and random.random() < 0.10:
+                try:
+                    hubs = self.hub_mgr.get_hubs(proj_name) if self.hub_mgr else []
+                    ready_hubs = [
+                        h for h in hubs
+                        if h.get("setup_complete") and h.get("total_posts", 0) >= 3
+                    ]
+                    if ready_hubs:
+                        hub = random.choice(ready_hubs)
+                        hub_sub = hub["subreddit"]
+                        current_sub = opp.get("subreddit_or_query", "")
+                        if hub_sub.lower() != current_sub.lower():
+                            self.content_gen._hub_reference = (
+                                f"If it fits naturally, you can mention that "
+                                f"r/{hub_sub} has good discussions on this topic. "
+                                f"Only do this if it genuinely adds value — never force it."
+                            )
+                except Exception as e:
+                    logger.debug(f"Hub cross-pollination failed: {e}")
 
             score = opp.get("score") or opp.get("relevance_score") or 0
             logger.info(

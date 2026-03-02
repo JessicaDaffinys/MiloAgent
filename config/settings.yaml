@@ -117,7 +117,7 @@ scan_limits:
 community_management:
   enabled: true
   interval_hours: 4
-  max_subs_per_cycle: 5
+  max_subs_per_cycle: 10
   auto_moderate: true
   sticky_refresh_days: 7
   creation:

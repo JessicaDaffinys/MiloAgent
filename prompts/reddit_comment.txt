@@ -13,6 +13,8 @@ Body: {post_body}
 
 {failure_avoidance}
 
+{hub_reference}
+
 Write a reply as yourself — a real person with opinions. Read the post carefully and respond to what they ACTUALLY said.
 
 Rules:

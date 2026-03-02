@@ -482,6 +482,7 @@ class ContentGenerator:
         subreddit: str,
         project: Dict,
         is_promotional: Optional[bool] = None,
+        hub_reference: str = "",
     ) -> str:
         """Generate a Reddit comment for a given post."""
         if is_promotional is None:
@@ -516,9 +517,11 @@ class ContentGenerator:
 
         tone_instruction = self._get_tone_instruction(tone_style)
 
-        # Gather research context and failure rules (thread-safe copy)
+        # Gather research context, failure rules, hub reference (thread-safe copy)
         research_context = getattr(self, "_research_context", "") or ""
         failure_rules = getattr(self, "_failure_rules", "") or ""
+        if not hub_reference:
+            hub_reference = getattr(self, "_hub_reference", "") or ""
 
         # SAFETY: Strip research context if it contains off-topic terms
         # that could leak into unrelated subreddit comments
@@ -548,6 +551,7 @@ class ContentGenerator:
             subreddit_persona=persona["persona"],
             research_context=research_context,
             failure_avoidance=failure_rules,
+            hub_reference=hub_reference,
         )
 
         system_prompt = (

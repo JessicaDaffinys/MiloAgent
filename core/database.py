@@ -930,6 +930,23 @@ class Database:
             return datetime.fromisoformat(row["timestamp"])
         return None
 
+    def get_action_count_in_subreddit(
+        self, account: str, subreddit: str, hours: int = 24
+    ) -> int:
+        """Count actions by a specific account in a specific subreddit."""
+        since = (datetime.utcnow() - timedelta(hours=hours)).isoformat()
+        try:
+            row = self.conn.execute(
+                """SELECT COUNT(*) FROM actions a
+                   JOIN opportunities o ON a.target_id = o.target_id
+                   WHERE a.account = ? AND o.subreddit_or_query = ?
+                   AND a.success = 1 AND a.timestamp > ?""",
+                (account, subreddit, since),
+            ).fetchone()
+            return row[0] if row else 0
+        except Exception:
+            return 0
+
     def get_last_action_in_subreddit(self, account: str, subreddit: str) -> Optional[datetime]:
         """Get timestamp of last action in a specific subreddit."""
         row = self.conn.execute(
