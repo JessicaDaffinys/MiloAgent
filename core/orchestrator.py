@@ -2326,7 +2326,7 @@ class Orchestrator:
             try:
                 bot = self._get_reddit_bot(account)
                 result = self.ban_detector.check_reddit_shadowban(
-                    bot.reddit, username
+                    bot, username
                 )
                 if result["is_shadowbanned"]:
                     self.account_mgr.mark_warned(
