@@ -500,7 +500,7 @@ class RedditWebBot(BasePlatform):
             return int(m.group(1)) * 60
         return 10  # Safe fallback
 
-    def act(self, opportunity: Dict, project: Dict) -> bool:
+    def act(self, opportunity: Dict, project: Dict, hub_reference: str = "") -> bool:
         """Generate, validate, and post a comment."""
         project_name = project.get("project", {}).get("name", "unknown")
 
@@ -552,6 +552,7 @@ class RedditWebBot(BasePlatform):
                 subreddit=opportunity["subreddit"],
                 project=project,
                 is_promotional=is_promo,
+                hub_reference=hub_reference or None,
             )
 
             # Content validation
@@ -622,6 +623,7 @@ class RedditWebBot(BasePlatform):
                     f"cookies={list(self.session.cookies.keys())}"
                 )
                 self._authenticated = False
+                self._modhash = ""  # Clear stale modhash to force re-auth
                 self._consecutive_failures += 1
                 return False
 
@@ -688,12 +690,12 @@ class RedditWebBot(BasePlatform):
             self._consecutive_failures = 0
             self._circuit_breaker_opened_at = None
 
-            comment_data = (
+            things = (
                 result.get("json", {})
                 .get("data", {})
-                .get("things", [{}])[0]
-                .get("data", {})
+                .get("things", [])
             )
+            comment_data = things[0].get("data", {}) if things else {}
             comment_id = comment_data.get("id", "unknown")
 
             self.db.log_action(
@@ -1336,6 +1338,10 @@ class RedditWebBot(BasePlatform):
             logger.warning("Cannot send DM: not authenticated")
             return False
 
+        if not self._modhash:
+            logger.error("No modhash available — cannot send DM (CSRF protection)")
+            return False
+
         # Human-like delay before sending
         time.sleep(random.uniform(2, 5))
 
@@ -1412,6 +1418,10 @@ class RedditWebBot(BasePlatform):
         thing_id is the message ID (e.g., t4_abc123).
         """
         if not self._ensure_auth():
+            return False
+
+        if not self._modhash:
+            logger.error("No modhash available — cannot reply to DM (CSRF protection)")
             return False
 
         time.sleep(random.uniform(2, 5))

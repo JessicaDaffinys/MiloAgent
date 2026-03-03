@@ -70,7 +70,7 @@ class AccountManager:
                         else:
                             cooldown_min = 15
                         expires = ts + timedelta(minutes=cooldown_min)
-                        if expires > datetime.now():
+                        if expires > datetime.utcnow():
                             self._cooldowns[key] = expires
                             self._statuses[key] = self.COOLDOWN
                         else:
@@ -198,7 +198,7 @@ class AccountManager:
 
     def _cleanup_expired(self):
         """Remove expired cooldown entries to prevent unbounded dict growth."""
-        now = datetime.now()
+        now = datetime.utcnow()
         expired = [k for k, v in self._cooldowns.items() if now >= v]
         for key in expired:
             del self._cooldowns[key]
@@ -230,7 +230,7 @@ class AccountManager:
                     continue
 
                 if key in self._cooldowns:
-                    if datetime.now() < self._cooldowns[key]:
+                    if datetime.utcnow() < self._cooldowns[key]:
                         continue
                     else:
                         del self._cooldowns[key]
@@ -289,13 +289,13 @@ class AccountManager:
         """Get a specific account by username (if healthy and not on cooldown)."""
         accounts = self.load_accounts(platform)
         for acc in accounts:
-            if acc.get("username") == username:
-                key = f"{platform}:{username}"
+            if acc.get("username", "").lower() == username.lower():
+                key = f"{platform}:{acc.get('username', username)}"
                 status = self._statuses.get(key, self.HEALTHY)
                 if status == self.BANNED:
                     logger.warning(f"Account {username} is banned — skipping")
                     return None
-                if key in self._cooldowns and datetime.now() < self._cooldowns[key]:
+                if key in self._cooldowns and datetime.utcnow() < self._cooldowns[key]:
                     logger.warning(f"Account {username} is on cooldown — skipping")
                     return None
                 return acc
@@ -310,7 +310,7 @@ class AccountManager:
         """Put an account on cooldown."""
         key = f"{platform}:{account}"
         with self._lock:
-            self._cooldowns[key] = datetime.now() + timedelta(minutes=minutes)
+            self._cooldowns[key] = datetime.utcnow() + timedelta(minutes=minutes)
             self._statuses[key] = self.COOLDOWN
         self.db.update_account_health(
             platform, account, self.COOLDOWN,

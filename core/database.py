@@ -938,7 +938,7 @@ class Database:
         Uses JOIN to opportunities table (which holds subreddit info).
         Hub posts use a separate flow and are not counted here.
         """
-        since = (datetime.now() - timedelta(hours=hours)).isoformat()
+        since = (datetime.utcnow() - timedelta(hours=hours)).isoformat()
         try:
             row = self.conn.execute(
                 """SELECT COUNT(*) FROM actions a
@@ -956,7 +956,7 @@ class Database:
         row = self.conn.execute(
             """SELECT a.timestamp FROM actions a
                JOIN opportunities o ON a.target_id = o.target_id
-               WHERE a.account = ? AND o.subreddit_or_query = ?
+               WHERE a.account = ? AND LOWER(o.subreddit_or_query) = LOWER(?)
                AND a.success = 1
                ORDER BY a.timestamp DESC LIMIT 1""",
             (account, subreddit),

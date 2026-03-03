@@ -511,8 +511,10 @@ class Orchestrator:
         try:
             tg_config = load_yaml(f"{self.config_dir}/telegram.yaml")
             notifications = tg_config.get("notifications", {})
-        except Exception:
+        except FileNotFoundError:
             pass
+        except Exception as e:
+            logger.debug(f"Failed to load telegram config: {e}")
 
         if notifications.get("daily_report"):
             report_hour = notifications.get("daily_report_hour", 22)
@@ -540,8 +542,8 @@ class Orchestrator:
                 if job and job.next_run_time is None:
                     job.resume()
                     logger.info(f"Auto-recovered crashed job '{event.job_id}'")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to auto-recover job '{event.job_id}': {e}")
 
         def _on_job_missed(event):
             logger.warning(f"Scheduled job '{event.job_id}' missed its run window")
@@ -1132,7 +1134,7 @@ class Orchestrator:
                 self.content_gen._failure_rules = ""
 
             # Cross-pollination: 10% chance to hint at our hub in comments
-            self.content_gen._hub_reference = ""
+            _hub_ref = ""
             if platform == "reddit" and random.random() < 0.10:
                 try:
                     hubs = self.hub_manager.get_hubs(proj_name) if self.hub_manager else []
@@ -1145,7 +1147,7 @@ class Orchestrator:
                         hub_sub = hub["subreddit"]
                         current_sub = opp.get("subreddit_or_query", "")
                         if hub_sub.lower() != current_sub.lower():
-                            self.content_gen._hub_reference = (
+                            _hub_ref = (
                                 f"If it fits naturally, you can mention that "
                                 f"r/{hub_sub} has good discussions on this topic. "
                                 f"Only do this if it genuinely adds value — never force it."
@@ -1175,7 +1177,10 @@ class Orchestrator:
                 else:
                     continue
 
-                success = bot.act(opp, project)
+                if platform == "reddit" and _hub_ref:
+                    success = bot.act(opp, project, hub_reference=_hub_ref)
+                else:
+                    success = bot.act(opp, project)
 
                 if success:
                     self.rate_limiter.record_action(
